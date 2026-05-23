@@ -90,6 +90,8 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .adj-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--white); width: 28px; height: 28px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
 .adj-btn:hover { border-color: var(--gold); color: var(--gold); }
 .bet-display { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--gold-bright); min-width: 48px; text-align: center; }
+.bet-display-input { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--gold-bright); background: none; border: none; border-bottom: 1px solid var(--gold); width: 56px; text-align: center; outline: none; padding: 0; -moz-appearance: textfield; }
+.bet-display-input::-webkit-outer-spin-button, .bet-display-input::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 .players-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
 
@@ -328,7 +330,7 @@ function renderPlay() {
       <div class="bet-adjuster">
         <div>
           <div class="bet-adjuster-label">Bet</div>
-          <div class="bet-display">$${hi.bet}</div>
+          <div style="display:flex;align-items:center;gap:2px"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--gold-bright)">$</span><input class="bet-display-input" id="bet-input" type="number" min="1" value="${hi.bet}" /></div>
         </div>
         <button class="adj-btn" id="bet-down">−</button>
         <button class="adj-btn" id="bet-up">+</button>
@@ -414,7 +416,7 @@ function renderEditModal() {
       <div class="bet-adjuster" style="margin-bottom:16px;display:inline-flex">
         <div>
           <div class="bet-adjuster-label">Bet</div>
-          <div class="bet-display">$${hi.bet}</div>
+          <div style="display:flex;align-items:center;gap:2px"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--gold-bright)">$</span><input class="bet-display-input" id="bet-input" type="number" min="1" value="${hi.bet}" /></div>
         </div>
         <button class="adj-btn" id="bet-down">−</button>
         <button class="adj-btn" id="bet-up">+</button>
@@ -561,6 +563,13 @@ function attachGameEvents() {
       state.holeInput.bet = Math.max(1, state.holeInput.bet - 1);
       render();
     });
+    document.getElementById('bet-input')?.addEventListener('input', e => {
+      const val = parseInt(e.target.value);
+      if (!isNaN(val) && val >= 1) state.holeInput.bet = val;
+    });
+    document.getElementById('bet-input')?.addEventListener('blur', () => {
+      render();
+    });
 
     // player cards cycle: none→winner→loser→push→winner…
     document.querySelectorAll('.player-card[data-player]').forEach(card => {
@@ -637,6 +646,13 @@ function attachGameEvents() {
     });
     document.getElementById('bet-down')?.addEventListener('click', () => {
       state.holeInput.bet = Math.max(1, state.holeInput.bet - 1);
+      render();
+    });
+    document.getElementById('bet-input')?.addEventListener('input', e => {
+      const val = parseInt(e.target.value);
+      if (!isNaN(val) && val >= 1) state.holeInput.bet = val;
+    });
+    document.getElementById('bet-input')?.addEventListener('blur', () => {
       render();
     });
 
