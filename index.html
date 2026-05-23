@@ -322,7 +322,9 @@ function renderPlay() {
     </div>`;
   });
 
-  const canConfirm = winners.length > 0 && losers.length > 0;
+  const unset = state.players.filter(p => !hi.statuses[p] || hi.statuses[p] === 'none');
+  const allDecided = unset.length === 0;
+  const canConfirm = (winners.length > 0 && losers.length > 0) || (allDecided && winners.length === 0 && losers.length === 0);
 
   return `
     <div class="hole-header">
