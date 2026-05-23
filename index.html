@@ -314,17 +314,15 @@ function renderPlay() {
 
   let playerCards = '';
   state.players.forEach(p => {
-    const status = hi.statuses[p] || 'none';
+    const status = hi.statuses[p] || 'push';
     const label = status === 'winner' ? 'WIN' : status === 'loser' ? 'LOSS' : 'PUSH';
-    playerCards += `<div class="player-card ${status==='none'?'push':status}" data-player="${p}">
+    playerCards += `<div class="player-card ${status}" data-player="${p}">
       <span class="player-card-name">${p}</span>
       <span class="player-card-status">${label}</span>
     </div>`;
   });
 
-  const unset = state.players.filter(p => !hi.statuses[p] || hi.statuses[p] === 'none');
-  const allDecided = unset.length === 0;
-  const canConfirm = (winners.length > 0 && losers.length > 0) || (allDecided && winners.length === 0 && losers.length === 0);
+  const canConfirm = true;
 
   return `
     <div class="hole-header">
@@ -406,7 +404,7 @@ function renderEditModal() {
   state.players.forEach(p => {
     const status = hi.statuses[p] || 'push';
     const label = status === 'winner' ? 'WIN' : status === 'loser' ? 'LOSS' : 'PUSH';
-    playerCards += `<div class="player-card ${status==='none'?'push':status}" data-player="${p}" style="margin-bottom:8px">
+    playerCards += `<div class="player-card ${status}" data-player="${p}" style="margin-bottom:8px">
       <span class="player-card-name">${p}</span>
       <span class="player-card-status">${label}</span>
     </div>`;
@@ -535,7 +533,7 @@ function attachSetupEvents() {
     state.activeTab = 'play';
     state.editingHole = null;
     state.holeInput = { bet: state.defaultBet, statuses: {} };
-    state.players.forEach(p => state.holeInput.statuses[p] = 'none');
+    state.players.forEach(p => state.holeInput.statuses[p] = 'push');
     render();
   });
 }
@@ -577,8 +575,8 @@ function attachGameEvents() {
     document.querySelectorAll('.player-card[data-player]').forEach(card => {
       card.addEventListener('click', e => {
         const p = card.dataset.player;
-        const cur = state.holeInput.statuses[p] || 'none';
-        const cycle = { none: 'winner', winner: 'loser', loser: 'push', push: 'winner' };
+        const cur = state.holeInput.statuses[p] || 'push';
+        const cycle = { push: 'winner', winner: 'loser', loser: 'push' };
         state.holeInput.statuses[p] = cycle[cur];
         render();
       });
@@ -595,7 +593,7 @@ function attachGameEvents() {
       });
       state.currentHole++;
       state.holeInput = { bet: state.defaultBet, statuses: {} };
-      state.players.forEach(p => state.holeInput.statuses[p] = 'none');
+      state.players.forEach(p => state.holeInput.statuses[p] = 'push');
       render();
     });
   }
@@ -617,7 +615,7 @@ function attachGameEvents() {
     document.getElementById('modal-cancel')?.addEventListener('click', () => {
       state.editingHole = null;
       state.holeInput = { bet: state.defaultBet, statuses: {} };
-      state.players.forEach(p => state.holeInput.statuses[p] = 'none');
+      state.players.forEach(p => state.holeInput.statuses[p] = 'push');
       render();
     });
 
@@ -625,7 +623,7 @@ function attachGameEvents() {
       if (e.target.id === 'modal-overlay') {
         state.editingHole = null;
         state.holeInput = { bet: state.defaultBet, statuses: {} };
-        state.players.forEach(p => state.holeInput.statuses[p] = 'none');
+        state.players.forEach(p => state.holeInput.statuses[p] = 'push');
         render();
       }
     });
@@ -638,7 +636,7 @@ function attachGameEvents() {
       state.holes[state.editingHole].results = results;
       state.editingHole = null;
       state.holeInput = { bet: state.defaultBet, statuses: {} };
-      state.players.forEach(p => state.holeInput.statuses[p] = 'none');
+      state.players.forEach(p => state.holeInput.statuses[p] = 'push');
       render();
     });
 
@@ -661,8 +659,8 @@ function attachGameEvents() {
     document.querySelectorAll('.player-card[data-player]').forEach(card => {
       card.addEventListener('click', () => {
         const p = card.dataset.player;
-        const cur = state.holeInput.statuses[p] || 'none';
-        const cycle = { none: 'winner', winner: 'loser', loser: 'push', push: 'winner' };
+        const cur = state.holeInput.statuses[p] || 'push';
+        const cycle = { push: 'winner', winner: 'loser', loser: 'push' };
         state.holeInput.statuses[p] = cycle[cur];
         render();
       });
