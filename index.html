@@ -216,11 +216,20 @@ const SJCC = {
 // ═══════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════
-const SK = 'tbd_scoring_v1';
-function loadState() { try { return JSON.parse(localStorage.getItem(SK)) || null; } catch { return null; } }
+const SK = 'tbd_scoring_v2';
+function loadState() {
+  try {
+    // Clear old version keys
+    localStorage.removeItem('tbd_scoring_v1');
+    return JSON.parse(localStorage.getItem(SK)) || null;
+  } catch { return null; }
+}
 function saveState() { localStorage.setItem(SK, JSON.stringify(state)); }
 
 let state = loadState() || { screen: 'home' };
+// Ensure critical objects always exist
+if (!state.scores) state.scores = {};
+if (!state.players) state.players = [];
 
 // ═══════════════════════════════════════════
 // HANDICAP HELPERS
@@ -256,6 +265,7 @@ function computeNassauState(ns) {
   // ns = nassau setup object, state.ns
   // Returns match status for front, back, overall + all active presses
   const scores = state.scores || {};
+  if (!state.scores) state.scores = {};
   const ng = state.nsGame || {};
   ns.presses = ng.presses || [];
   const { teamA, teamB, format, hcpPct } = ns;
@@ -308,11 +318,14 @@ function computeNassauState(ns) {
   result.back   = resolveMatch(9, 17);
   result.overall = resolveMatch(0, 17);
 
-  // Presses
+  // Presses — each press runs from startHole to endHole (fixed at segment end)
   result.presses = (ns.presses || []).map(pr => {
     const end = pr.endHole != null ? pr.endHole : (pr.segment === 'front' ? 8 : 17);
     return { ...pr, match: resolveMatch(pr.startHole, end) };
   });
+  // Index by id for cascade lookups
+  result.pressesById = {};
+  result.presses.forEach(pr => { if (pr.id) result.pressesById[pr.id] = pr; });
 
   return result;
 }
@@ -484,7 +497,7 @@ function renderWolfSetup() {
     </div>
     <div class="section-label">Default Bet Per Hole</div>
     <div class="card"><div class="field-row"><span class="field-label">Amount each loser pays</span>
-      <div style="display:flex;align-items:center;gap:4px"><span style="color:var(--gold);font-family:'IBM Plex Mono',monospace;font-weight:600">$</span>
+      <div style="display:flex;align-items:center;gap:4px"><span style="color:var(--gold);font-family:IBM Plex Mono,monospace;font-weight:600">$</span>
       <input class="num-input" id="wolf-default-bet" value="${ws.defaultBet}" min="1" /></div>
     </div></div>
     <button class="big-btn green" id="wolf-start">Tee It Up →</button>
@@ -538,10 +551,10 @@ function renderWolfPlay() {
   }).join('');
 
   return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.06em">Hole ${wg.currentHole} <span style="font-size:1rem;color:var(--muted)">of 18</span></div>
+    <div style="font-family:Bebas Neue,sans-serif;font-size:2rem;letter-spacing:0.06em">Hole ${wg.currentHole} <span style="font-size:1rem;color:var(--muted)">of 18</span></div>
     <div class="bet-adjuster">
       <div><div class="bet-adj-label">Bet</div>
-      <div style="display:flex;align-items:center;gap:2px"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold-bright)">$</span>
+      <div style="display:flex;align-items:center;gap:2px"><span style="font-family:Bebas Neue,sans-serif;font-size:1.3rem;color:var(--gold-bright)">$</span>
       <input class="bet-dinput" id="wolf-bet-input" type="number" min="1" value="${hi.bet}"/></div></div>
       <button class="adj-btn" id="wolf-bet-down">−</button>
       <button class="adj-btn" id="wolf-bet-up">+</button>
@@ -584,8 +597,8 @@ function renderWolfPrev() {
     }).filter(Boolean).join(' ');
     return `<div class="card" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold)">Hole ${h.num}</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--muted)">$${h.bet}/player</span>
+        <span style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--gold)">Hole ${h.num}</span>
+        <span style="font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:var(--muted)">$${h.bet}/player</span>
         <button class="back-btn" data-wolf-edit="${i}">Edit</button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">${chips}</div>
@@ -606,10 +619,10 @@ function renderWolfEditModal() {
   }).join('');
   return `<div style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;display:flex;align-items:flex-end;justify-content:center" id="wolf-modal-overlay">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:480px;padding:20px 16px 36px;max-height:85vh;overflow-y:auto">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--gold);margin-bottom:14px">Edit Hole ${wg.holes[wg.editingHole].num}</div>
+      <div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:var(--gold);margin-bottom:14px">Edit Hole ${wg.holes[wg.editingHole].num}</div>
       <div class="bet-adjuster" style="margin-bottom:14px;display:inline-flex">
         <div><div class="bet-adj-label">Bet</div>
-        <div style="display:flex;align-items:center;gap:2px"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold-bright)">$</span>
+        <div style="display:flex;align-items:center;gap:2px"><span style="font-family:Bebas Neue,sans-serif;font-size:1.3rem;color:var(--gold-bright)">$</span>
         <input class="bet-dinput" id="wolf-bet-input" type="number" min="1" value="${hi.bet}"/></div></div>
         <button class="adj-btn" id="wolf-bet-down">−</button>
         <button class="adj-btn" id="wolf-bet-up">+</button>
@@ -792,6 +805,7 @@ function renderNSScorecard() {
   const hole = SJCC.holes[hi];
   const players = state.players;
 
+  if (!state.scores) state.scores = {};
   const scoreRows = players.map(p => {
     const gross = (state.scores[p.name] || {})[hi];
     const strokes = strokesOnHole(p.hcp, hole.hcp, ns.hcpPct);
@@ -831,7 +845,7 @@ function renderNSScorecard() {
     const bLabel = ns.teamB.join('/');
     nassauSnip = `<div class="hole-result-box" style="margin-bottom:10px">
       <div class="hole-result-row"><span class="label">${seg === 'front' ? 'Front' : 'Back'} · Thru ${thru}</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:${matchStatusColor}">${matchStatusText}</span>
+        <span style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:${matchStatusColor}">${matchStatusText}</span>
       </div>
       <div class="hole-result-row" style="font-size:0.7rem">
         <span style="color:var(--blue-text)">${aLabel}</span>
@@ -864,6 +878,10 @@ function renderNSScorecard() {
     </div>
     <div class="score-entry">${scoreRows}</div>
     ${nassauSnip}
+    ${ng.currentHole < 17
+      ? `<button class="big-btn gold" id="ns-confirm-hole">Confirm Hole ${hole.num} →</button>`
+      : `<button class="big-btn green" id="ns-finish-round">Finish Round ✓</button>`
+    }
   </div>`;
 }
 
@@ -878,21 +896,35 @@ function renderNSNassau() {
     if (diff === 0) return 'var(--muted)';
     return diff > 0 ? 'var(--blue-text)' : 'var(--purple-text)';
   }
-  function matchRow(label, match, bet) {
+  function matchRow(label, match, bet, extra='') {
     return `<div class="nassau-row">
-      <div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--white)">${label}</div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--muted)">${match.holesPlayed} holes played · $${bet}</div>
+      <div style="flex:1">
+        <div style="font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:var(--white)">${label}</div>
+        <div style="font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:var(--muted)">${match.holesPlayed} holes played · $${bet}</div>
+        ${extra}
       </div>
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${statusColor(match.diff)}">${match.status}</span>
+      <span style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:${statusColor(match.diff)}">${match.status}</span>
     </div>`;
   }
 
   let pressRows = '';
   if (nr.presses.length > 0) {
-    pressRows = nr.presses.map((pr, i) =>
-      matchRow(`Press ${i+1} (H${pr.startHole+1}+)`, pr.match, pr.bet || ns.betFront)
-    ).join('');
+    pressRows = nr.presses.map((pr, i) => {
+      const typeLabel = pr.auto ? '⚡ Auto' : '👆 Manual';
+      const typeColor = pr.auto ? 'var(--gold-bright)' : 'var(--blue-text)';
+      const label = `Press ${i+1} · H${pr.startHole+1}–${pr.endHole+1}`;
+      const extra = `<div style="display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap">
+        <span style="font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:${typeColor};background:var(--surface2);border:1px solid ${typeColor};border-radius:4px;padding:1px 7px">${typeLabel}</span>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:var(--muted)">$</span>
+          <input type="number" class="press-bet-input" data-press-idx="${i}" value="${pr.bet}" min="1"
+            style="background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--white);font-family:IBM Plex Mono,monospace;font-size:0.72rem;width:50px;padding:2px 5px;outline:none;-moz-appearance:textfield"/>
+        </div>
+        <button class="press-remove-btn" data-press-idx="${i}"
+          style="background:var(--red-dim);border:1px solid var(--red);border-radius:4px;color:var(--red-text);font-family:IBM Plex Mono,monospace;font-size:0.68rem;padding:2px 8px;cursor:pointer">Remove</button>
+      </div>`;
+      return matchRow(label, pr.match, pr.bet, extra);
+    }).join('');
   }
 
   let payoutRows = payouts.map(p => {
@@ -915,7 +947,7 @@ function renderNSNassau() {
       ${matchRow('Overall', nr.overall, ns.betTotal)}
       ${pressRows}
     </div>
-    ${payoutRows ? `<div class="card"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:8px">Current Payouts</div>
+    ${payoutRows ? `<div class="card"><div style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:8px">Current Payouts</div>
       <div class="hole-result-box" style="margin:0">${payoutRows}</div></div>` : ''}
     <button class="big-btn ghost" id="ns-manual-press" style="margin-top:4px">+ Add Manual Press</button>
   </div>`;
@@ -957,7 +989,7 @@ function renderNSSkins() {
       <div class="stat-item"><div class="stat-val">${ns.carryover?'Yes':'No'}</div><div class="stat-lbl">Carryover</div></div>
     </div>
     <div class="lb-card"><div class="lb-card-header">Skins Leaderboard</div>${lbRows}</div>
-    <div class="card"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:8px">Hole by Hole</div>
+    <div class="card"><div style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:8px">Hole by Hole</div>
       ${holeRows}
     </div>
   </div>`;
@@ -980,32 +1012,102 @@ function renderNSSummary() {
     const payouts = nassauPayout(ns, nr);
     payouts.forEach(po => {
       if (!po || po.a === undefined) return;
-      ns.teamA.forEach(n => totals[n] = (totals[n]||0) + (po.a / ns.teamA.length));
-      ns.teamB.forEach(n => totals[n] = (totals[n]||0) + (po.b / ns.teamB.length));
+      ns.teamA.forEach(n => totals[n] = (totals[n]||0) + po.a);
+      ns.teamB.forEach(n => totals[n] = (totals[n]||0) + po.b);
     });
   }
 
+  if (!state.scores) state.scores = {};
+  const holesPlayed = Object.values((state.scores[state.players[0]?.name]) || {}).filter(v=>v!=null).length;
+  const parPlayed = SJCC.holes.slice(0, holesPlayed).reduce((s,h) => s+h.par, 0);
+
+  // Build scorecard rows per player
+  const scorecardRows = state.players.map(p => {
+    let grossTotal = 0, netTotal = 0;
+    const holeCells = SJCC.holes.slice(0, holesPlayed).map(hole => {
+      const g = (state.scores[p.name] || {})[hole.num - 1];
+      if (g == null) return '<td style="color:var(--muted);font-family:IBM Plex Mono,monospace;font-size:0.72rem;padding:4px 6px;text-align:center">–</td>';
+      const strokes = strokesOnHole(p.hcp, hole.hcp, ns.hcpPct);
+      const n = g - strokes;
+      grossTotal += g;
+      netTotal += n;
+      const diff = g - hole.par;
+      const color = diff <= -2 ? '#f0e68c' : diff === -1 ? 'var(--gold-bright)' : diff === 0 ? 'var(--white)' : diff === 1 ? '#ff9944' : 'var(--red-text)';
+      return `<td style="color:${color};font-family:IBM Plex Mono,monospace;font-size:0.72rem;padding:4px 6px;text-align:center">${g}${strokes>0?'*':''}</td>`;
+    }).join('');
+    return `<tr>
+      <td style="font-weight:600;font-size:0.85rem;padding:6px 10px;white-space:nowrap">${p.name}</td>
+      ${holeCells}
+      <td style="font-family:IBM Plex Mono,monospace;font-size:0.78rem;padding:4px 8px;text-align:center;color:var(--white);border-left:1px solid var(--border)">${grossTotal||'–'}</td>
+      <td style="font-family:IBM Plex Mono,monospace;font-size:0.78rem;padding:4px 8px;text-align:center;color:var(--green-text)">${netTotal||'–'}</td>
+    </tr>`;
+  }).join('');
+
+  const holeHeaders = SJCC.holes.slice(0, holesPlayed).map(h =>
+    `<th style="font-family:IBM Plex Mono,monospace;font-size:0.65rem;color:var(--muted);padding:4px 6px;text-align:center;font-weight:400">${h.num}</th>`
+  ).join('');
+
   const sorted = [...state.players].sort((a,b) => totals[b.name] - totals[a.name]);
-  const rows = sorted.map((p, i) => {
+  const moneyRows = sorted.map((p, i) => {
     const net = totals[p.name];
     const cls = net>0?'pos':net<0?'neg':'zero';
     const sign = net>0?'+':'';
+    // Breakdown
+    let skinsAmt = 0, nassauAmt = 0;
+    if (ns.skins) {
+      const sk = skinsTotals(computeSkinsState(ns), ns.skinBet, state.players);
+      skinsAmt = sk[p.name] || 0;
+    }
+    nassauAmt = net - skinsAmt;
+    const breakdown = [
+      ns.nassau ? `Nassau: ${nassauAmt>=0?'+':''}$${fmt(Math.abs(nassauAmt))}` : '',
+      ns.skins  ? `Skins: ${skinsAmt>=0?'+':''}$${fmt(Math.abs(skinsAmt))}` : ''
+    ].filter(Boolean).join(' · ');
     return `<div class="lb-row">
       <span class="lb-rank ${i===0?'gold':''}">${i===0?'★':i+1}</span>
-      <span class="lb-name">${p.name}</span>
+      <div style="flex:1;margin-left:8px">
+        <div class="lb-name">${p.name}</div>
+        <div style="font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:var(--muted)">${breakdown}</div>
+      </div>
       <span class="lb-val ${cls}" style="font-size:1.5rem">${sign}$${fmt(Math.abs(net))}</span>
     </div>`;
   }).join('');
 
-  const holesPlayed = Object.values(state.scores[state.players[0]?.name] || {}).filter(v=>v!=null).length;
-
   return `<div>
     <div class="stat-strip">
       <div class="stat-item"><div class="stat-val">${holesPlayed}</div><div class="stat-lbl">Holes</div></div>
-      <div class="stat-item"><div class="stat-val">${SJCC.holes.slice(0,holesPlayed).reduce((s,h)=>s+h.par,0)}</div><div class="stat-lbl">Par</div></div>
+      <div class="stat-item"><div class="stat-val">${parPlayed}</div><div class="stat-lbl">Par</div></div>
       <div class="stat-item"><div class="stat-val">${state.players.length}</div><div class="stat-lbl">Players</div></div>
     </div>
-    <div class="lb-card"><div class="lb-card-header">Net Totals</div>${rows}</div>
+
+    <div class="lb-card" style="margin-bottom:12px">
+      <div class="lb-card-header">Money — Final Standings</div>
+      ${moneyRows}
+    </div>
+
+    <div class="card" style="overflow-x:auto;padding:10px">
+      <div style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:8px">
+        Scorecard <span style="font-size:0.7rem;color:var(--muted);font-family:IBM Plex Mono,monospace;font-weight:400">* = stroke received</span>
+      </div>
+      <table style="border-collapse:collapse;width:100%">
+        <thead>
+          <tr>
+            <th style="font-family:IBM Plex Mono,monospace;font-size:0.65rem;color:var(--muted);padding:4px 10px;text-align:left;font-weight:400">Player</th>
+            ${holeHeaders}
+            <th style="font-family:IBM Plex Mono,monospace;font-size:0.65rem;color:var(--muted);padding:4px 8px;text-align:center;border-left:1px solid var(--border);font-weight:400">Gross</th>
+            <th style="font-family:IBM Plex Mono,monospace;font-size:0.65rem;color:var(--green-text);padding:4px 8px;text-align:center;font-weight:400">Net</th>
+          </tr>
+          <tr>
+            <td style="font-family:IBM Plex Mono,monospace;font-size:0.65rem;color:var(--muted);padding:2px 10px">Par</td>
+            ${SJCC.holes.slice(0,holesPlayed).map(h=>`<td style="font-family:IBM Plex Mono,monospace;font-size:0.65rem;color:var(--muted);padding:2px 6px;text-align:center">${h.par}</td>`).join('')}
+            <td style="font-family:IBM Plex Mono,monospace;font-size:0.65rem;color:var(--muted);padding:2px 8px;text-align:center;border-left:1px solid var(--border)">${parPlayed}</td>
+            <td></td>
+          </tr>
+        </thead>
+        <tbody>${scorecardRows}</tbody>
+      </table>
+    </div>
+
     <button class="big-btn green" id="ns-new-round">New Round</button>
     <button class="big-btn ghost" id="ns-back-to-game">← Back to Round</button>
   </div>`;
@@ -1219,7 +1321,9 @@ function attachNSGameEvents() {
   });
   document.getElementById('ns-end-round')?.addEventListener('click', () => { state.nsSaved=false; state.screen='home'; render(); });
   document.getElementById('sc-prev')?.addEventListener('click', () => { if(ng.currentHole>0){ng.currentHole--; render();} });
-  document.getElementById('sc-next')?.addEventListener('click', () => { if(ng.currentHole<17){ng.currentHole++; render();} });
+  document.getElementById('sc-next')?.addEventListener('click', () => {
+    if (ng.currentHole < 17) { ng.currentHole++; render(); }
+  });
 
   // Score adjusters
   document.querySelectorAll('[data-sc-up]').forEach(btn => {
@@ -1229,7 +1333,6 @@ function attachNSGameEvents() {
       if (!state.scores[p]) state.scores[p] = {};
       const par = SJCC.holes[hi].par;
       state.scores[p][hi] = (state.scores[p][hi] != null ? state.scores[p][hi] : par - 1) + 1;
-      checkAutoPress(hi);
       render();
     });
   });
@@ -1241,19 +1344,36 @@ function attachNSGameEvents() {
       const par = SJCC.holes[hi].par;
       const cur = state.scores[p][hi] != null ? state.scores[p][hi] : par + 1;
       state.scores[p][hi] = Math.max(1, cur - 1);
-      checkAutoPress(hi);
       render();
     });
   });
 
   // Manual press
+  // Confirm hole — runs auto-press check then advances
+  document.getElementById('ns-confirm-hole')?.addEventListener('click', () => {
+    const hi = ng.currentHole;
+    checkAutoPress(hi);
+    ng.currentHole++;
+    render();
+  });
+
+  // Finish round — auto-press on 18, then go to summary
+  document.getElementById('ns-finish-round')?.addEventListener('click', () => {
+    const hi = ng.currentHole;
+    checkAutoPress(hi);
+    ng.tab = 'summary';
+    render();
+  });
+
   document.querySelectorAll('#ns-manual-press').forEach(btn => {
     btn.addEventListener('click', () => {
       const hi = ng.currentHole;
       const seg = hi < 9 ? 'front' : 'back';
       ng.presses = ng.presses || [];
       const pressNum = ng.presses.filter(p => p.manual).length + 1;
-      ng.presses.push({ startHole: hi, segment: seg, bet: seg==='front'?ns.betFront:ns.betBack, manual:true });
+      const segEnd = seg === 'front' ? 8 : 17;
+      const id = Date.now() + Math.random();
+      ng.presses.push({ id, parentPressId: null, startHole: hi, endHole: segEnd, segment: seg, bet: seg==='front'?ns.betFront:ns.betBack, manual:true, hasSpawned: false });
       ns.presses = ng.presses;
       showToast(`Press #${pressNum} logged — starting hole ${hi + 1}`);
       render();
@@ -1262,6 +1382,40 @@ function attachNSGameEvents() {
 
   document.getElementById('ns-new-round')?.addEventListener('click', () => { state.screen='ns-setup'; state.nsSaved=false; render(); });
   document.getElementById('ns-back-to-game')?.addEventListener('click', () => { ng.tab='scorecard'; render(); });
+
+  // Press edit / remove
+  document.querySelectorAll('.press-bet-input').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const idx = parseInt(e.target.dataset.pressIdx);
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val) && val >= 1) {
+        ng.presses[idx].bet = val;
+        ns.presses = ng.presses;
+        render();
+        showToast(`Press ${idx+1} bet updated to $${val}`);
+      }
+    });
+    // Prevent tap on input from bubbling and re-rendering mid-type
+    inp.addEventListener('click', e => e.stopPropagation());
+  });
+
+  document.querySelectorAll('.press-remove-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const idx = parseInt(e.target.dataset.pressIdx);
+      const removed = ng.presses.splice(idx, 1)[0];
+      ns.presses = ng.presses;
+      // Reset hasSpawned on parent if this was an auto press
+      if (removed.parentPressId) {
+        const parent = ng.presses.find(p => p.id === removed.parentPressId);
+        if (parent) parent.hasSpawned = false;
+      } else {
+        // Was a root press — reset root hasSpawned tracking by removing from presses
+        // Root presses are tracked by absence in the array
+      }
+      render();
+      showToast(`Press ${idx+1} removed`);
+    });
+  });
 }
 
 function checkAutoPress(holeIdx) {
@@ -1269,18 +1423,71 @@ function checkAutoPress(holeIdx) {
   if (!ns.nassau || !ns.autoPress) return;
   const ng = state.nsGame;
   ng.presses = ng.presses || [];
-  ns.presses = ng.presses;
 
-  const nr = computeNassauState(ns);
   const seg = holeIdx < 9 ? 'front' : 'back';
-  const match = seg==='front' ? nr.front : nr.back;
+  const segEnd = seg === 'front' ? 8 : 17;
+  const nextHole = holeIdx + 1;
 
-  // Check if 2 down and no press already started at this hole
-  if (Math.abs(match.diff) >= 2) {
-    const alreadyPressed = ng.presses.some(p => p.startHole === holeIdx+1 && p.segment===seg && !p.manual);
-    if (!alreadyPressed && holeIdx+1 <= (seg==='front'?8:17)) {
-      ng.presses.push({ startHole: holeIdx+1, segment:seg, bet: seg==='front'?ns.betFront:ns.betBack, auto:true });
+  // Can't open a press on the last hole or beyond
+  if (nextHole > segEnd) return;
+
+  // Safety: only run if all players have scores for this hole
+  if (!state.scores) state.scores = {};
+  const allScored = state.players.every(p =>
+    state.scores[p.name] && state.scores[p.name][holeIdx] != null
+  );
+  if (!allScored) return;
+
+  // Sync presses to ns so computeNassauState sees them
+  ns.presses = ng.presses;
+  const nr = computeNassauState(ns);
+
+  // --- Check original segment match ---
+  const origMatch = seg === 'front' ? nr.front : nr.back;
+  // Only auto presses with no parentPressId count as "originated from original match"
+  const origAutoPressed = ng.presses.some(p => p.segment === seg && p.auto && !p.parentPressId);
+  if (!origAutoPressed && Math.abs(origMatch.diff) >= 2) {
+    const id = `${Date.now()}-${Math.random()}`;
+    ng.presses.push({
+      id, parentPressId: null,
+      startHole: nextHole, endHole: segEnd,
+      segment: seg,
+      bet: seg === 'front' ? ns.betFront : ns.betBack,
+      auto: true, hasSpawned: false
+    });
+    ns.presses = ng.presses;
+    showToast(`Auto-press opened — H${nextHole + 1} to ${segEnd + 1}`);
+    return; // Only one press action per hole check
+  }
+
+  // --- Check each existing press for cascade ---
+  // Re-sync after potential changes above
+  ns.presses = ng.presses;
+  const nr2 = computeNassauState(ns);
+
+  for (let i = 0; i < ng.presses.length; i++) {
+    const p = ng.presses[i];
+    if (p.segment !== seg) continue;
+    if (p.hasSpawned) continue;
+    if (p.endHole < nextHole - 1) continue; // press ended before this hole
+    if (p.startHole > holeIdx) continue; // press hasn't started yet
+
+    const prResult = nr2.presses.find(pr => pr.id === p.id);
+    if (!prResult) continue;
+
+    if (Math.abs(prResult.match.diff) >= 2) {
+      const id = `${Date.now()}-${Math.random()}`;
+      p.hasSpawned = true;
+      ng.presses.push({
+        id, parentPressId: p.id,
+        startHole: nextHole, endHole: segEnd,
+        segment: seg,
+        bet: p.bet,
+        auto: true, hasSpawned: false
+      });
       ns.presses = ng.presses;
+      showToast(`Auto-press cascade — H${nextHole + 1} to ${segEnd + 1}`);
+      return; // One press action per hole check
     }
   }
 }
