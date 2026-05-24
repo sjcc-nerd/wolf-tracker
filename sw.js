@@ -1,7 +1,7 @@
 const CACHE_NAME = 'sjcc-scoring-v1';
 const ASSETS = [
-  '/tbd-scoring/',
-  '/tbd-scoring/index.html',
+  '/wolf-tracker/',
+  '/wolf-tracker/index.html',
 ];
 
 // Install — cache core assets
