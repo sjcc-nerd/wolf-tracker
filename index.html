@@ -3,684 +3,1244 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Wolf Tracker</title>
+<title>TBD Scoring</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
 :root {
-  --bg: #0d1117;
-  --surface: #161b22;
-  --surface2: #21262d;
-  --border: #30363d;
-  --green: #238636;
-  --green-bright: #2ea043;
-  --green-dim: #1a3a25;
-  --green-text: #56d364;
-  --red: #b91c1c;
-  --red-bright: #da3633;
-  --red-dim: #3a1a1a;
-  --red-text: #f85149;
-  --gray: #30363d;
-  --gray-text: #8b949e;
-  --gold: #d29922;
-  --gold-bright: #e3b341;
-  --gold-dim: #2d2007;
-  --white: #f0f6fc;
-  --muted: #8b949e;
-  --radius: 10px;
+  --bg: #0d1117; --surface: #161b22; --surface2: #21262d; --border: #30363d;
+  --green: #238636; --green-bright: #2ea043; --green-dim: #1a3a25; --green-text: #56d364;
+  --red: #b91c1c; --red-bright: #da3633; --red-dim: #3a1a1a; --red-text: #f85149;
+  --blue: #1f6feb; --blue-dim: #0d2a4a; --blue-text: #79c0ff;
+  --purple: #6e40c9; --purple-dim: #1e1040; --purple-text: #d2a8ff;
+  --gold: #d29922; --gold-bright: #e3b341; --gold-dim: #2d2007;
+  --white: #f0f6fc; --muted: #8b949e; --radius: 10px;
 }
-
 html, body { height: 100%; background: var(--bg); color: var(--white); font-family: 'IBM Plex Sans', sans-serif; overflow: hidden; }
-
 .app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; max-width: 480px; margin: 0 auto; }
 
-/* ── SETUP ── */
-.setup { flex: 1; overflow-y: auto; padding: 24px 16px 40px; }
-.setup-logo { text-align: center; margin-bottom: 28px; }
-.setup-logo h1 { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 0.12em; color: var(--gold-bright); line-height: 1; }
-.setup-logo p { color: var(--muted); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px; }
-
-.section-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); margin-bottom: 8px; }
-
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
-
-.player-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.player-row:last-child { margin-bottom: 0; }
-.player-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--gold); width: 22px; flex-shrink: 0; }
-.player-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; color: var(--white); font-family: 'IBM Plex Sans', sans-serif; font-size: 0.95rem; outline: none; transition: border-color 0.15s; }
-.player-row input:focus { border-color: var(--gold); }
-.remove-btn { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px 6px; border-radius: 5px; transition: color 0.15s; }
-.remove-btn:hover { color: var(--red-text); }
-
-.add-player-btn { width: 100%; background: none; border: 1px dashed var(--border); border-radius: 7px; color: var(--muted); font-family: 'IBM Plex Sans', sans-serif; font-size: 0.85rem; padding: 9px; cursor: pointer; transition: all 0.15s; margin-top: 4px; }
-.add-player-btn:hover { border-color: var(--gold); color: var(--gold); }
-
-.bet-row { display: flex; align-items: center; gap: 12px; }
-.bet-row label { flex: 1; color: var(--muted); font-size: 0.85rem; }
-.bet-input-wrap { display: flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 8px 12px; }
-.bet-input-wrap span { color: var(--gold); font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
-.bet-input-wrap input { background: none; border: none; color: var(--white); font-family: 'IBM Plex Mono', monospace; font-size: 1rem; font-weight: 600; width: 60px; outline: none; text-align: right; }
-
-.start-btn { width: 100%; background: var(--green); border: none; border-radius: var(--radius); color: var(--white); font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.12em; padding: 16px; cursor: pointer; transition: background 0.15s; }
-.start-btn:hover { background: var(--green-bright); }
-.start-btn:active { transform: scale(0.98); }
-
-/* ── MAIN GAME ── */
-.game { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
+/* ── SHARED ── */
+.screen { flex: 1; overflow-y: auto; padding: 20px 16px 40px; }
 .top-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 .top-bar-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; color: var(--gold-bright); }
-.end-round-btn { background: var(--red); border: none; border-radius: 6px; color: var(--white); font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em; padding: 6px 12px; cursor: pointer; transition: background 0.15s; }
-.end-round-btn:hover { background: var(--red-bright); }
-
-.tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.tab { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 4px; cursor: pointer; transition: all 0.15s; }
+.back-btn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; padding: 5px 10px; cursor: pointer; }
+.back-btn:hover { border-color: var(--gold); color: var(--gold); }
+.tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; overflow-x: auto; }
+.tab { flex: 1; min-width: 70px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 10px 4px; cursor: pointer; white-space: nowrap; }
 .tab.active { color: var(--gold-bright); border-bottom-color: var(--gold-bright); }
-
 .tab-content { flex: 1; overflow-y: auto; padding: 16px; }
+.section-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); margin-bottom: 8px; margin-top: 16px; }
+.section-label:first-child { margin-top: 0; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+.field-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.field-row:last-child { margin-bottom: 0; }
+.field-label { color: var(--muted); font-size: 0.85rem; flex: 1; }
+.text-input { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; color: var(--white); font-family: 'IBM Plex Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.15s; width: 100%; }
+.text-input:focus { border-color: var(--gold); }
+.num-input { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; color: var(--white); font-family: 'IBM Plex Mono', monospace; font-size: 0.9rem; outline: none; width: 70px; text-align: right; -moz-appearance: textfield; }
+.num-input::-webkit-outer-spin-button, .num-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.num-input:focus { border-color: var(--gold); }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.toggle-label { color: var(--white); font-size: 0.9rem; }
+.toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 24px; cursor: pointer; transition: 0.2s; }
+.toggle-slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: var(--white); border-radius: 50%; transition: 0.2s; }
+.toggle input:checked + .toggle-slider { background: var(--green); }
+.toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+.big-btn { width: 100%; border: none; border-radius: var(--radius); font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.12em; padding: 15px; cursor: pointer; transition: all 0.15s; margin-bottom: 10px; }
+.big-btn:active { transform: scale(0.98); }
+.big-btn.green { background: var(--green); color: var(--white); }
+.big-btn.green:hover { background: var(--green-bright); }
+.big-btn.gold { background: var(--gold); color: var(--bg); }
+.big-btn.gold:hover { background: var(--gold-bright); }
+.big-btn.ghost { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 1.1rem; }
+.big-btn.ghost:hover { border-color: var(--gold); color: var(--gold); }
+.big-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
+.chip { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; padding: 3px 10px; border-radius: 20px; font-weight: 500; display: inline-block; }
+.chip.green { background: var(--green-dim); color: var(--green-text); border: 1px solid var(--green); }
+.chip.red { background: var(--red-dim); color: var(--red-text); border: 1px solid var(--red); }
+.chip.blue { background: var(--blue-dim); color: var(--blue-text); border: 1px solid var(--blue); }
+.chip.purple { background: var(--purple-dim); color: var(--purple-text); border: 1px solid var(--purple); }
+.chip.gray { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.chip.gold { background: var(--gold-dim); color: var(--gold-bright); border: 1px solid var(--gold); }
+.seg-control { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+.seg-btn { flex: 1; background: none; border: none; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; padding: 7px 4px; cursor: pointer; transition: all 0.15s; }
+.seg-btn.active { background: var(--gold); color: var(--bg); font-weight: 600; }
 
-/* ── PLAY TAB ── */
-.hole-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.hole-title { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.08em; color: var(--white); }
-.hole-title span { color: var(--muted); font-size: 1rem; }
+/* ── HOME ── */
+.home-logo { text-align: center; padding: 32px 0 24px; }
+.home-logo h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; letter-spacing: 0.12em; color: var(--gold-bright); line-height: 1; }
+.home-logo p { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 6px; }
+.game-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 16px; }
+.game-card:hover, .game-card:active { border-color: var(--gold); background: var(--surface2); }
+.game-card-icon { font-size: 2rem; width: 48px; text-align: center; flex-shrink: 0; }
+.game-card-text h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.1em; color: var(--white); }
+.game-card-text p { color: var(--muted); font-size: 0.78rem; margin-top: 3px; }
 
-.bet-adjuster { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; }
-.bet-adjuster-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-.adj-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--white); width: 28px; height: 28px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
-.adj-btn:hover { border-color: var(--gold); color: var(--gold); }
-.bet-display { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--gold-bright); min-width: 48px; text-align: center; }
-.bet-display-input { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--gold-bright); background: none; border: none; border-bottom: 1px solid var(--gold); width: 56px; text-align: center; outline: none; padding: 0; -moz-appearance: textfield; }
-.bet-display-input::-webkit-outer-spin-button, .bet-display-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+/* ── SETUP ── */
+.player-setup-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.player-setup-row:last-child { margin-bottom: 0; }
+.player-idx { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: var(--gold); width: 20px; flex-shrink: 0; }
+.player-setup-row .text-input { flex: 2; }
+.player-setup-row .num-input { width: 55px; }
+.remove-btn { background: none; border: none; color: var(--muted); font-size: 1rem; cursor: pointer; padding: 4px; }
+.remove-btn:hover { color: var(--red-text); }
+.add-btn { width: 100%; background: none; border: 1px dashed var(--border); border-radius: 7px; color: var(--muted); font-size: 0.85rem; padding: 9px; cursor: pointer; margin-top: 4px; }
+.add-btn:hover { border-color: var(--gold); color: var(--gold); }
+.team-select { display: flex; gap: 6px; }
+.team-btn { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 0.08em; padding: 6px; cursor: pointer; text-align: center; transition: all 0.15s; }
+.team-btn.team-a { }
+.team-btn.team-b { }
+.team-btn.selected-a { background: var(--blue-dim); border-color: var(--blue-text); color: var(--blue-text); }
+.team-btn.selected-b { background: var(--purple-dim); border-color: var(--purple-text); color: var(--purple-text); }
 
-.players-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+/* ── SCORECARD ── */
+.hole-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.hole-nav-title { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--white); letter-spacing: 0.06em; }
+.hole-nav-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+.hole-meta { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.hole-meta-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+.hole-meta-item span { color: var(--white); font-weight: 600; }
+.score-entry { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.score-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+.score-player-name { flex: 1; font-weight: 600; font-size: 0.95rem; }
+.score-player-hcp { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+.score-stroke-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--gold-bright); background: var(--gold-dim); border-radius: 4px; padding: 1px 5px; }
+.score-adj { display: flex; align-items: center; gap: 6px; }
+.sc-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; color: var(--white); width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sc-btn:hover { border-color: var(--gold); }
+.sc-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--white); min-width: 32px; text-align: center; }
+.sc-val.eagle { color: #f0e68c; }
+.sc-val.birdie { color: var(--gold-bright); }
+.sc-val.par { color: var(--white); }
+.sc-val.bogey { color: #ff9944; }
+.sc-val.double { color: var(--red-text); }
+.sc-val.worse { color: #cc0000; }
+.sc-net { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--green-text); min-width: 36px; text-align: right; }
+.hole-result-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; }
+.hole-result-row { display: flex; justify-content: space-between; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; padding: 3px 0; }
+.hole-result-row .label { color: var(--muted); }
+.press-btn { background: var(--blue-dim); border: 1px solid var(--blue); border-radius: 6px; color: var(--blue-text); font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; padding: 5px 12px; cursor: pointer; }
+.press-btn:hover { background: var(--blue); color: var(--white); }
 
-.player-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; transition: all 0.15s; user-select: none; }
-.player-card.winner { background: var(--green-dim); border-color: var(--green-text); }
-.player-card.loser { background: var(--red-dim); border-color: var(--red-text); }
-.player-card.push { background: var(--surface2); border-color: var(--muted); }
-
-.player-card-name { font-size: 1.1rem; font-weight: 600; }
-.player-card.winner .player-card-name { color: var(--green-text); }
-.player-card.loser .player-card-name { color: var(--red-text); }
-.player-card.push .player-card-name { color: var(--muted); }
-
-.player-card-status { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.1em; padding: 4px 14px; border-radius: 5px; }
-.player-card.winner .player-card-status { background: var(--green); color: var(--white); }
-.player-card.loser .player-card-status { background: var(--red); color: var(--white); }
-.player-card.push .player-card-status { background: var(--gray); color: var(--muted); }
-
-.hole-preview { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--muted); line-height: 1.7; }
-.hole-preview .math-line { color: var(--white); }
-.hole-preview .math-line.green { color: var(--green-text); }
-.hole-preview .math-line.red { color: var(--red-text); }
-
-.confirm-btn { width: 100%; background: var(--gold); border: none; border-radius: var(--radius); color: var(--bg); font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.12em; padding: 16px; cursor: pointer; transition: all 0.15s; }
-.confirm-btn:hover { background: var(--gold-bright); }
-.confirm-btn:active { transform: scale(0.98); }
-.confirm-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
-
-/* ── LEADERBOARD TAB ── */
-.lb-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; }
-.lb-row.leader { border-color: var(--gold); }
-.lb-rank { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: var(--muted); width: 24px; }
+/* ── LEADERBOARD / RESULTS ── */
+.lb-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; }
+.lb-card-header { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 8px 14px; font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 0.1em; color: var(--gold); }
+.lb-row { display: flex; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); gap: 8px; }
+.lb-row:last-child { border-bottom: none; }
+.lb-rank { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--muted); width: 22px; flex-shrink: 0; }
 .lb-rank.gold { color: var(--gold-bright); }
-.lb-name { flex: 1; font-weight: 600; font-size: 1rem; margin-left: 10px; }
-.lb-holes { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); margin-right: 12px; }
-.lb-amount { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.04em; }
-.lb-amount.pos { color: var(--green-text); }
-.lb-amount.neg { color: var(--red-text); }
-.lb-amount.zero { color: var(--muted); }
-
-.lb-empty { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 40px 0; }
-
-/* ── PREVIOUS HOLES TAB ── */
-.hole-log-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
-.hole-log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.hole-log-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--gold); letter-spacing: 0.06em; }
-.hole-log-bet { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted); }
-.edit-hole-btn { background: none; border: 1px solid var(--border); border-radius: 5px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; padding: 3px 8px; cursor: pointer; transition: all 0.15s; }
-.edit-hole-btn:hover { border-color: var(--gold); color: var(--gold); }
-.hole-log-players { display: flex; flex-wrap: wrap; gap: 6px; }
-.log-chip { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
-.log-chip.winner { background: var(--green-dim); color: var(--green-text); border: 1px solid var(--green); }
-.log-chip.loser { background: var(--red-dim); color: var(--red-text); border: 1px solid var(--red); }
-.log-chip.push { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-.hole-log-result { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 6px; }
-
-.prev-empty { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 40px 0; }
-
-/* ── EDIT MODAL ── */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
-.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 0 0; width: 100%; max-width: 480px; padding: 20px 16px 36px; max-height: 85vh; overflow-y: auto; }
-.modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--gold); letter-spacing: 0.1em; margin-bottom: 16px; }
-.modal-actions { display: flex; gap: 10px; margin-top: 16px; }
-.modal-save { flex: 1; background: var(--gold); border: none; border-radius: 8px; color: var(--bg); font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.1em; padding: 12px; cursor: pointer; }
-.modal-cancel { flex: 1; background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.1em; padding: 12px; cursor: pointer; }
-
-/* ── END ROUND ── */
-.end-screen { flex: 1; overflow-y: auto; padding: 24px 16px 40px; }
-.end-logo { text-align: center; margin-bottom: 24px; }
-.end-logo h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; letter-spacing: 0.12em; color: var(--gold-bright); }
-.end-logo p { color: var(--muted); font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; }
-.end-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
-.end-row { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); }
-.end-row:last-child { border-bottom: none; }
-.end-row.top-row { background: var(--gold-dim); border-bottom-color: var(--gold); }
-.end-pos { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--gold); width: 28px; }
-.end-name { flex: 1; font-weight: 600; font-size: 1rem; }
-.end-holes { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); margin-right: 12px; text-align: right; }
-.end-net { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.04em; }
-.end-net.pos { color: var(--green-text); }
-.end-net.neg { color: var(--red-text); }
-.end-net.zero { color: var(--muted); }
-.new-round-btn { width: 100%; background: var(--green); border: none; border-radius: var(--radius); color: var(--white); font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.12em; padding: 16px; cursor: pointer; transition: background 0.15s; margin-bottom: 10px; }
-.new-round-btn:hover { background: var(--green-bright); }
-.continue-btn { width: 100%; background: none; border: 1px solid var(--border); border-radius: var(--radius); color: var(--muted); font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.1em; padding: 14px; cursor: pointer; transition: all 0.15s; }
-.continue-btn:hover { border-color: var(--gold); color: var(--gold); }
-
-.stat-row { display: flex; justify-content: space-around; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 20px; }
+.lb-name { flex: 1; font-weight: 600; font-size: 0.9rem; }
+.lb-detail { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+.lb-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; }
+.lb-val.pos { color: var(--green-text); }
+.lb-val.neg { color: var(--red-text); }
+.lb-val.zero { color: var(--muted); }
+.lb-val.blue { color: var(--blue-text); }
+.match-status { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.06em; }
+.match-status.up { color: var(--green-text); }
+.match-status.down { color: var(--red-text); }
+.match-status.even { color: var(--muted); }
+.nassau-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; }
+.nassau-header { background: var(--surface2); padding: 8px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.nassau-header-title { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.08em; color: var(--gold); }
+.nassau-header-bet { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+.nassau-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.nassau-row:last-child { border-bottom: none; }
+.nassau-bet-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+.stat-strip { display: flex; justify-content: space-around; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 12px; }
 .stat-item { text-align: center; }
-.stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--white); }
-.stat-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--white); }
+.stat-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* ── WOLF (inline) ── */
+.wolf-player-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; transition: all 0.15s; user-select: none; margin-bottom: 8px; }
+.wolf-player-card.winner { background: var(--green-dim); border-color: var(--green-text); }
+.wolf-player-card.loser { background: var(--red-dim); border-color: var(--red-text); }
+.wolf-player-card.push { background: var(--surface2); border-color: var(--muted); }
+.wolf-player-card .pname { font-size: 1.05rem; font-weight: 600; }
+.wolf-player-card.winner .pname { color: var(--green-text); }
+.wolf-player-card.loser .pname { color: var(--red-text); }
+.wolf-player-card.push .pname { color: var(--muted); }
+.wolf-status-badge { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.1em; padding: 4px 12px; border-radius: 5px; }
+.wolf-player-card.winner .wolf-status-badge { background: var(--green); color: var(--white); }
+.wolf-player-card.loser .wolf-status-badge { background: var(--red); color: var(--white); }
+.wolf-player-card.push .wolf-status-badge { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+.wolf-preview { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; line-height: 1.7; }
+.wolf-preview .ml { color: var(--white); }
+.wolf-preview .ml.g { color: var(--green-text); }
+.wolf-preview .ml.r { color: var(--red-text); }
+.bet-adjuster { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; }
+.bet-adj-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; }
+.adj-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--white); width: 28px; height: 28px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.adj-btn:hover { border-color: var(--gold); }
+.bet-dinput { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--gold-bright); background: none; border: none; border-bottom: 1px solid var(--gold); width: 52px; text-align: center; outline: none; -moz-appearance: textfield; }
+.bet-dinput::-webkit-outer-spin-button, .bet-dinput::-webkit-inner-spin-button { -webkit-appearance: none; }
 </style>
 </head>
 <body>
 <div class="app" id="app"></div>
-
 <script>
-// ── STATE ──
-const STORAGE_KEY = 'wolf_tracker_v1';
-
-function loadState() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null; } catch { return null; }
-}
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-let state = loadState() || {
-  screen: 'setup',   // setup | game | end
-  players: [],
-  defaultBet: 5,
-  holes: [],
-  activeTab: 'play',
-  currentHole: 1,
-  editingHole: null,  // index into holes[] being edited
-  // per-hole input in progress
-  holeInput: { bet: 5, statuses: {} }
+// ═══════════════════════════════════════════
+// SJCC COURSE DATA
+// ═══════════════════════════════════════════
+const SJCC = {
+  name: 'San Jose Country Club',
+  holes: [
+    {num:1,  par:4, hcp:10, yds:295},
+    {num:2,  par:4, hcp:8,  yds:313},
+    {num:3,  par:3, hcp:12, yds:171},
+    {num:4,  par:5, hcp:6,  yds:446},
+    {num:5,  par:3, hcp:16, yds:145},
+    {num:6,  par:4, hcp:2,  yds:386},
+    {num:7,  par:3, hcp:18, yds:156},
+    {num:8,  par:5, hcp:14, yds:435},
+    {num:9,  par:4, hcp:4,  yds:360},
+    {num:10, par:3, hcp:15, yds:209},
+    {num:11, par:5, hcp:11, yds:474},
+    {num:12, par:5, hcp:13, yds:445},
+    {num:13, par:4, hcp:7,  yds:411},
+    {num:14, par:3, hcp:17, yds:169},
+    {num:15, par:4, hcp:9,  yds:368},
+    {num:16, par:5, hcp:5,  yds:534},
+    {num:17, par:5, hcp:1,  yds:514},
+    {num:18, par:4, hcp:3,  yds:363},
+  ]
 };
 
-// ── RENDER ──
-function render() {
-  const app = document.getElementById('app');
-  if (state.screen === 'setup') app.innerHTML = renderSetup();
-  else if (state.screen === 'game') app.innerHTML = renderGame();
-  else if (state.screen === 'end') app.innerHTML = renderEnd();
-  attachEvents();
-  saveState();
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+const SK = 'tbd_scoring_v1';
+function loadState() { try { return JSON.parse(localStorage.getItem(SK)) || null; } catch { return null; } }
+function saveState() { localStorage.setItem(SK, JSON.stringify(state)); }
+
+let state = loadState() || { screen: 'home' };
+
+// ═══════════════════════════════════════════
+// HANDICAP HELPERS
+// ═══════════════════════════════════════════
+// Returns number of strokes a player gets on a specific hole
+function strokesOnHole(playerHcp, holeHcp, hcpPct = 100) {
+  const adjHcp = Math.round(playerHcp * hcpPct / 100);
+  if (adjHcp <= 0) return 0;
+  if (adjHcp >= 18) {
+    return adjHcp >= 18 + holeHcp ? 2 : 1;
+  }
+  return holeHcp <= adjHcp ? 1 : 0;
 }
 
-// ── SETUP ──
-function renderSetup() {
-  const players = state.players.length ? state.players : ['', '', '', ''];
-  if (!state.players.length) state.players = players;
-
-  let playerRows = '';
-  players.forEach((name, i) => {
-    const canRemove = i >= 4 && players.length > 4;
-    playerRows += `
-      <div class="player-row" data-pi="${i}">
-        <span class="player-num">${i+1}</span>
-        <input type="text" class="player-name-input" data-idx="${i}" placeholder="Player ${i+1}" value="${name}" autocomplete="off" />
-        ${canRemove ? `<button class="remove-btn" data-remove="${i}">✕</button>` : ''}
-      </div>`;
-  });
-
-  const canAdd = players.length < 5;
-
-  return `
-    <div class="setup">
-      <div class="setup-logo">
-        <h1>WOLF</h1>
-        <p>Golf Money Tracker</p>
-      </div>
-
-      <div class="section-label">Players</div>
-      <div class="card">
-        ${playerRows}
-        ${canAdd ? `<button class="add-player-btn" id="add-player-btn">+ Add Player (${players.length}/5)</button>` : ''}
-      </div>
-
-      <div class="section-label">Default Bet Per Hole</div>
-      <div class="card">
-        <div class="bet-row">
-          <label>Amount each loser pays per hole</label>
-          <div class="bet-input-wrap">
-            <span>$</span>
-            <input type="number" id="default-bet" value="${state.defaultBet}" min="1" step="1" />
-          </div>
-        </div>
-      </div>
-
-      <button class="start-btn" id="start-btn">Tee It Up →</button>
-    </div>`;
+function netScore(gross, playerHcp, holeHcp, hcpPct = 100) {
+  return gross - strokesOnHole(playerHcp, holeHcp, hcpPct);
 }
 
-// ── GAME ──
-function renderGame() {
-  const tab = state.activeTab;
-  return `
-    <div class="game">
-      <div class="top-bar">
-        <span class="top-bar-title">🐺 WOLF TRACKER</span>
-        <button class="end-round-btn" id="end-round-btn">End Round</button>
-      </div>
-      <div class="tabs">
-        <button class="tab ${tab==='play'?'active':''}" data-tab="play">Play</button>
-        <button class="tab ${tab==='leaderboard'?'active':''}" data-tab="leaderboard">Leaderboard</button>
-        <button class="tab ${tab==='prev'?'active':''}" data-tab="prev">Previous Holes</button>
-      </div>
-      <div class="tab-content">
-        ${tab==='play' ? renderPlay() : ''}
-        ${tab==='leaderboard' ? renderLeaderboard() : ''}
-        ${tab==='prev' ? renderPrevHoles() : ''}
-      </div>
-    </div>
-    ${state.editingHole !== null ? renderEditModal() : ''}`;
+function scoreLabel(gross, par) {
+  const d = gross - par;
+  if (d <= -2) return 'eagle';
+  if (d === -1) return 'birdie';
+  if (d === 0)  return 'par';
+  if (d === 1)  return 'bogey';
+  if (d === 2)  return 'double';
+  return 'worse';
 }
 
-function renderPlay() {
-  const hi = state.holeInput;
-  const winners = state.players.filter(p => hi.statuses[p] === 'winner');
-  const losers = state.players.filter(p => hi.statuses[p] === 'loser');
-  const pot = losers.length * hi.bet;
-  const winEach = winners.length > 0 ? (pot / winners.length) : 0;
+// ═══════════════════════════════════════════
+// NASSAU HELPERS
+// ═══════════════════════════════════════════
+function computeNassauState(ns) {
+  // ns = nassau setup object, state.ns
+  // Returns match status for front, back, overall + all active presses
+  const scores = state.scores || {};
+  const { teamA, teamB, format, hcpPct } = ns;
+  const result = { front: null, back: null, overall: null, presses: [] };
 
-  let preview = '';
-  if (losers.length > 0 || winners.length > 0) {
-    preview = `<div class="hole-preview">`;
-    if (losers.length > 0 && winners.length > 0) {
-      preview += `<div class="math-line">${losers.length} loser${losers.length>1?'s':''} × $${hi.bet} = $${pot} pot</div>`;
-      preview += `<div class="math-line green">Winners each get +$${winEach % 1 === 0 ? winEach : winEach.toFixed(2)}</div>`;
-      preview += `<div class="math-line red">Losers each pay −$${hi.bet}</div>`;
-    } else if (losers.length > 0 && winners.length === 0) {
-      preview += `<div class="math-line">Waiting for at least 1 winner…</div>`;
-    } else if (winners.length > 0 && losers.length === 0) {
-      preview += `<div class="math-line">Waiting for at least 1 loser…</div>`;
+  function bestBallHole(team, holeIdx) {
+    const hole = SJCC.holes[holeIdx];
+    const grosses = team.map(p => scores[p] && scores[p][holeIdx] != null ? scores[p][holeIdx] : null);
+    if (grosses.some(g => g === null)) return null;
+    if (format === 'match') {
+      const nets = team.map((p, i) => {
+        const pObj = state.players.find(pl => pl.name === p);
+        return netScore(grosses[i], pObj ? pObj.hcp : 0, hole.hcp, hcpPct);
+      });
+      return Math.min(...nets);
+    } else {
+      // stroke play — use net totals (handled separately)
+      return Math.min(...grosses);
     }
-    preview += `</div>`;
   }
 
-  let playerCards = '';
-  state.players.forEach(p => {
-    const status = hi.statuses[p] || 'push';
-    const label = status === 'winner' ? 'WIN' : status === 'loser' ? 'LOSS' : 'PUSH';
-    playerCards += `<div class="player-card ${status}" data-player="${p}">
-      <span class="player-card-name">${p}</span>
-      <span class="player-card-status">${label}</span>
-    </div>`;
+  function resolveMatch(startHole, endHole) {
+    // Returns {aWins, bWins, holesPlayed, status, result}
+    let aWins = 0, bWins = 0, holesPlayed = 0;
+    for (let i = startHole; i <= endHole; i++) {
+      const a = bestBallHole(teamA, i);
+      const b = bestBallHole(teamB, i);
+      if (a === null || b === null) break;
+      holesPlayed++;
+      if (a < b) aWins++;
+      else if (b < a) bWins++;
+    }
+    const remaining = endHole - startHole + 1 - holesPlayed;
+    const diff = aWins - bWins;
+    let status = '';
+    if (diff === 0) status = 'AS';
+    else if (diff > 0) status = `A ${diff}UP`;
+    else status = `B ${Math.abs(diff)}UP`;
+    // Determine if closed out
+    let closed = false;
+    if (Math.abs(diff) > remaining && holesPlayed > 0) closed = true;
+    return { aWins, bWins, holesPlayed, diff, status, closed, remaining };
+  }
+
+  result.front = resolveMatch(0, 8);
+  result.back   = resolveMatch(9, 17);
+  result.overall = resolveMatch(0, 17);
+
+  // Presses
+  result.presses = (ns.presses || []).map(pr => {
+    const end = pr.endHole != null ? pr.endHole : (pr.segment === 'front' ? 8 : 17);
+    return { ...pr, match: resolveMatch(pr.startHole, end) };
   });
 
-  const canConfirm = true;
-
-  return `
-    <div class="hole-header">
-      <div class="hole-title">Hole ${state.currentHole} <span>of 18</span></div>
-      <div class="bet-adjuster">
-        <div>
-          <div class="bet-adjuster-label">Bet</div>
-          <div style="display:flex;align-items:center;gap:2px"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--gold-bright)">$</span><input class="bet-display-input" id="bet-input" type="number" min="1" value="${hi.bet}" /></div>
-        </div>
-        <button class="adj-btn" id="bet-down">−</button>
-        <button class="adj-btn" id="bet-up">+</button>
-      </div>
-    </div>
-    <div class="players-grid">${playerCards}</div>
-    ${preview}
-    <button class="confirm-btn" id="confirm-hole-btn" ${canConfirm?'':'disabled'}>Confirm Hole ${state.currentHole}</button>`;
+  return result;
 }
 
-function renderLeaderboard() {
-  if (state.holes.length === 0) {
-    return `<div class="lb-empty">No holes completed yet.<br/>Complete a hole to see standings.</div>`;
+function nassauPayout(ns, nassauResult) {
+  const bet = ns.bet || 0;
+  function dollarResult(match, betAmt) {
+    if (match.holesPlayed === 0) return null;
+    if (match.diff === 0) return { a: 0, b: 0, label: 'Push' };
+    if (match.diff > 0) return { a: betAmt, b: -betAmt, label: `A wins $${betAmt}` };
+    return { a: -betAmt, b: betAmt, label: `B wins $${betAmt}` };
   }
-
-  const totals = computeTotals();
-  const sorted = [...state.players].sort((a,b) => totals[b] - totals[a]);
-
-  return sorted.map((p, i) => {
-    const net = totals[p];
-    const cls = net > 0 ? 'pos' : net < 0 ? 'neg' : 'zero';
-    const sign = net > 0 ? '+' : '';
-    const wins = state.holes.filter(h => h.results[p] > 0).length;
-    const losses = state.holes.filter(h => h.results[p] < 0).length;
-    return `<div class="lb-row ${i===0?'leader':''}">
-      <span class="lb-rank ${i===0?'gold':''}">${i===0?'★':i+1}</span>
-      <span class="lb-name">${p}</span>
-      <span class="lb-holes">${wins}W ${losses}L</span>
-      <span class="lb-amount ${cls}">${sign}$${Math.abs(net) % 1 === 0 ? Math.abs(net) : Math.abs(net).toFixed(2)}</span>
-    </div>`;
-  }).join('');
-}
-
-function renderPrevHoles() {
-  if (state.holes.length === 0) {
-    return `<div class="prev-empty">No holes logged yet.</div>`;
-  }
-
-  return [...state.holes].reverse().map((h, ri) => {
-    const i = state.holes.length - 1 - ri;
-    let chips = state.players.map(p => {
-      const s = h.statuses[p];
-      return `<span class="log-chip ${s}">${p}</span>`;
-    }).join('');
-
-    let resultChips = state.players.map(p => {
-      const net = h.results[p];
-      if (net === 0) return '';
-      const cls = net > 0 ? 'winner' : 'loser';
-      const sign = net > 0 ? '+' : '';
-      return `<span class="log-chip ${cls}">${p}: ${sign}$${Math.abs(net) % 1 === 0 ? Math.abs(net) : Math.abs(net).toFixed(2)}</span>`;
-    }).filter(Boolean).join('');
-
-    return `<div class="hole-log-item">
-      <div class="hole-log-header">
-        <span class="hole-log-num">Hole ${h.num}</span>
-        <span class="hole-log-bet">$${h.bet}/player</span>
-        <button class="edit-hole-btn" data-edit="${i}">Edit</button>
-      </div>
-      <div class="hole-log-players">${chips}</div>
-      <div class="hole-log-result">${resultChips}</div>
-    </div>`;
-  }).join('');
-}
-
-function renderEditModal() {
-  const h = state.holes[state.editingHole];
-  const hi = state.holeInput;
-
-  let playerCards = '';
-  state.players.forEach(p => {
-    const status = hi.statuses[p] || 'push';
-    const label = status === 'winner' ? 'WIN' : status === 'loser' ? 'LOSS' : 'PUSH';
-    playerCards += `<div class="player-card ${status}" data-player="${p}" style="margin-bottom:8px">
-      <span class="player-card-name">${p}</span>
-      <span class="player-card-status">${label}</span>
-    </div>`;
+  const results = [];
+  if (ns.betFront) results.push({ name: 'Front 9', ...dollarResult(nassauResult.front, ns.betFront) });
+  if (ns.betBack)  results.push({ name: 'Back 9',  ...dollarResult(nassauResult.back,  ns.betBack) });
+  if (ns.betTotal) results.push({ name: 'Overall', ...dollarResult(nassauResult.overall, ns.betTotal) });
+  nassauResult.presses.forEach((pr, i) => {
+    results.push({ name: `Press ${i+1} (H${pr.startHole+1}+)`, ...dollarResult(pr.match, pr.bet || bet) });
   });
-
-  return `<div class="modal-overlay" id="modal-overlay">
-    <div class="modal">
-      <div class="modal-title">Edit Hole ${h.num}</div>
-      <div class="bet-adjuster" style="margin-bottom:16px;display:inline-flex">
-        <div>
-          <div class="bet-adjuster-label">Bet</div>
-          <div style="display:flex;align-items:center;gap:2px"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--gold-bright)">$</span><input class="bet-display-input" id="bet-input" type="number" min="1" value="${hi.bet}" /></div>
-        </div>
-        <button class="adj-btn" id="bet-down">−</button>
-        <button class="adj-btn" id="bet-up">+</button>
-      </div>
-      <div>${playerCards}</div>
-      <div class="modal-actions">
-        <button class="modal-cancel" id="modal-cancel">Cancel</button>
-        <button class="modal-save" id="modal-save">Save</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-// ── END ──
-function renderEnd() {
-  const totals = computeTotals();
-  const sorted = [...state.players].sort((a,b) => totals[b] - totals[a]);
-  const totalPot = state.holes.reduce((s,h) => s + h.bet * Object.values(h.statuses).filter(v=>v==='loser').length, 0);
-  const holesPlayed = state.holes.length;
-
-  let rows = sorted.map((p, i) => {
-    const net = totals[p];
-    const cls = net > 0 ? 'pos' : net < 0 ? 'neg' : 'zero';
-    const sign = net > 0 ? '+' : '';
-    const wins = state.holes.filter(h => h.results[p] > 0).length;
-    const losses = state.holes.filter(h => h.results[p] < 0).length;
-    return `<div class="end-row ${i===0?'top-row':''}">
-      <span class="end-pos">${i===0?'★':i+1}</span>
-      <span class="end-name">${p}</span>
-      <span class="end-holes">${wins}W / ${losses}L</span>
-      <span class="end-net ${cls}">${sign}$${Math.abs(net) % 1 === 0 ? Math.abs(net) : Math.abs(net).toFixed(2)}</span>
-    </div>`;
-  }).join('');
-
-  return `<div class="end-screen">
-    <div class="end-logo">
-      <h2>Round Complete</h2>
-      <p>Final Standings</p>
-    </div>
-    <div class="stat-row">
-      <div class="stat-item"><div class="stat-val">${holesPlayed}</div><div class="stat-lbl">Holes</div></div>
-      <div class="stat-item"><div class="stat-val">$${totalPot}</div><div class="stat-lbl">Total Action</div></div>
-      <div class="stat-item"><div class="stat-val">$${state.defaultBet}</div><div class="stat-lbl">Base Bet</div></div>
-    </div>
-    <div class="end-card">${rows}</div>
-    <button class="new-round-btn" id="new-round-btn">New Round</button>
-    <button class="continue-btn" id="continue-btn">← Back to Round</button>
-  </div>`;
-}
-
-// ── MATH ──
-function computeHoleResult(bet, statuses) {
-  const winners = Object.entries(statuses).filter(([,v])=>v==='winner').map(([k])=>k);
-  const losers = Object.entries(statuses).filter(([,v])=>v==='loser').map(([k])=>k);
-  const results = {};
-  Object.keys(statuses).forEach(p => results[p] = 0);
-  if (winners.length > 0 && losers.length > 0) {
-    const pot = losers.length * bet;
-    const winEach = pot / winners.length;
-    winners.forEach(p => results[p] = winEach);
-    losers.forEach(p => results[p] = -bet);
-  }
   return results;
 }
 
-function computeTotals() {
+// ═══════════════════════════════════════════
+// SKINS HELPERS
+// ═══════════════════════════════════════════
+function computeSkinsState(ss) {
+  const scores = state.scores || {};
+  const players = state.players || [];
+  const hcpPct = ss.hcpPct || 100;
+  const carryover = ss.carryover || false;
+  const skinType = ss.skinType || 'net'; // net | gross | canadian
+
+  let skins = []; // per hole: { winner: name|null, carried: bool, pot: number }
+  let carryPot = 1;
+
+  for (let hi = 0; hi < 18; hi++) {
+    const hole = SJCC.holes[hi];
+    const holeScores = players.map(p => {
+      const g = scores[p.name] && scores[p.name][hi] != null ? scores[p.name][hi] : null;
+      if (g === null) return null;
+      const strokes = strokesOnHole(p.hcp, hole.hcp, hcpPct);
+      return { name: p.name, gross: g, net: g - strokes, strokes };
+    });
+
+    if (holeScores.some(s => s === null)) {
+      skins.push({ hole: hi+1, winner: null, pot: carryPot, pending: true, carried: carryPot > 1 });
+      continue;
+    }
+
+    let winner = null;
+
+    if (skinType === 'gross') {
+      const minGross = Math.min(...holeScores.map(s => s.gross));
+      const grossWinners = holeScores.filter(s => s.gross === minGross);
+      if (grossWinners.length === 1) winner = grossWinners[0].name;
+    } else if (skinType === 'net') {
+      const minNet = Math.min(...holeScores.map(s => s.net));
+      const netWinners = holeScores.filter(s => s.net === minNet);
+      if (netWinners.length === 1) winner = netWinners[0].name;
+    } else if (skinType === 'canadian') {
+      // Gross birdie or better always beats net birdie
+      // Best gross score wins; tiebreaker is net
+      const minGross = Math.min(...holeScores.map(s => s.gross));
+      const par = hole.par;
+      const grossBirdieOrBetter = holeScores.filter(s => s.gross <= par - 1);
+
+      if (grossBirdieOrBetter.length === 1) {
+        winner = grossBirdieOrBetter[0].name;
+      } else if (grossBirdieOrBetter.length > 1) {
+        // Tiebreaker: net
+        const minNet = Math.min(...grossBirdieOrBetter.map(s => s.net));
+        const netWinners = grossBirdieOrBetter.filter(s => s.net === minNet);
+        winner = netWinners.length === 1 ? netWinners[0].name : null; // push if still tied
+      } else {
+        // No gross birdie — best net wins
+        const minNet = Math.min(...holeScores.map(s => s.net));
+        const netWinners = holeScores.filter(s => s.net === minNet);
+        if (netWinners.length === 1) winner = netWinners[0].name;
+      }
+    }
+
+    if (winner) {
+      skins.push({ hole: hi+1, winner, pot: carryPot, carried: carryPot > 1 });
+      carryPot = carryover ? 1 : 1;
+      if (carryover) carryPot = 1;
+    } else {
+      skins.push({ hole: hi+1, winner: null, pot: carryover ? carryPot + 1 : carryPot, carried: carryPot > 1, push: true });
+      if (carryover) carryPot++;
+    }
+  }
+  return skins;
+}
+
+function skinsTotals(skinsState, skinBet, players) {
   const totals = {};
-  state.players.forEach(p => totals[p] = 0);
-  state.holes.forEach(h => {
-    state.players.forEach(p => { totals[p] += (h.results[p] || 0); });
+  players.forEach(p => totals[p.name] = 0);
+  const winners = skinsState.filter(s => s.winner);
+  const totalSkinners = winners.length;
+  if (totalSkinners === 0) return totals;
+
+  skinsState.forEach(s => {
+    if (!s.winner) return;
+    const loserCount = players.length - 1;
+    const pot = loserCount * skinBet * s.pot;
+    totals[s.winner] += pot;
+    players.forEach(p => { if (p.name !== s.winner) totals[p.name] -= skinBet * s.pot; });
   });
   return totals;
 }
 
-// ── EVENTS ──
+// ═══════════════════════════════════════════
+// RENDER ENGINE
+// ═══════════════════════════════════════════
+function render() {
+  const app = document.getElementById('app');
+  const s = state.screen;
+  if (s === 'home')         app.innerHTML = renderHome();
+  else if (s === 'wolf-setup') app.innerHTML = renderWolfSetup();
+  else if (s === 'wolf-game')  app.innerHTML = renderWolfGame();
+  else if (s === 'ns-setup')   app.innerHTML = renderNSSetup();
+  else if (s === 'ns-game')    app.innerHTML = renderNSGame();
+  attachEvents();
+  saveState();
+}
+
+// ═══════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════
+function renderHome() {
+  const hasWolf = state.screen === 'home' && state.wolfState;
+  const hasNS   = state.screen === 'home' && state.nsState;
+  return `<div class="screen">
+    <div class="home-logo"><h1>TBD SCORING</h1><p>Golf Gambling Tracker</p></div>
+    <div class="section-label">Select Game</div>
+    <div class="game-card" id="home-wolf"><div class="game-card-icon">🐺</div><div class="game-card-text"><h3>Wolf</h3><p>Hole-by-hole team gambling game</p></div></div>
+    <div class="game-card" id="home-ns"><div class="game-card-icon">⛳</div><div class="game-card-text"><h3>Nassau + Skins</h3><p>Scorecard-based betting games</p></div></div>
+    ${state.wolfSaved ? `<button class="big-btn ghost" id="resume-wolf">Resume Wolf Round</button>` : ''}
+    ${state.nsSaved   ? `<button class="big-btn ghost" id="resume-ns">Resume Nassau/Skins Round</button>` : ''}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// WOLF SETUP + GAME
+// ═══════════════════════════════════════════
+function renderWolfSetup() {
+  const ws = state.wolf || { players: ['','','',''], defaultBet: 5 };
+  state.wolf = ws;
+  let rows = ws.players.map((n, i) => {
+    const canRemove = i >= 4;
+    return `<div class="player-setup-row">
+      <span class="player-idx">${i+1}</span>
+      <input class="text-input wolf-pname" data-idx="${i}" placeholder="Player ${i+1}" value="${n}" autocomplete="off"/>
+      ${canRemove ? `<button class="remove-btn" data-wolf-remove="${i}">✕</button>` : ''}
+    </div>`;
+  }).join('');
+  return `<div class="top-bar"><span class="top-bar-title">🐺 WOLF</span><button class="back-btn" id="go-home">Home</button></div>
+  <div class="screen">
+    <div class="section-label">Players (4–5)</div>
+    <div class="card">${rows}
+      ${ws.players.length < 5 ? `<button class="add-btn" id="wolf-add-player">+ Add Player (${ws.players.length}/5)</button>` : ''}
+    </div>
+    <div class="section-label">Default Bet Per Hole</div>
+    <div class="card"><div class="field-row"><span class="field-label">Amount each loser pays</span>
+      <div style="display:flex;align-items:center;gap:4px"><span style="color:var(--gold);font-family:'IBM Plex Mono',monospace;font-weight:600">$</span>
+      <input class="num-input" id="wolf-default-bet" value="${ws.defaultBet}" min="1" /></div>
+    </div></div>
+    <button class="big-btn green" id="wolf-start">Tee It Up →</button>
+  </div>`;
+}
+
+function renderWolfGame() {
+  const wg = state.wolfGame;
+  const tab = wg.tab || 'play';
+  return `<div class="top-bar"><span class="top-bar-title">🐺 WOLF</span>
+    <div style="display:flex;gap:6px">
+      <button class="back-btn" id="wolf-end-round" style="color:var(--red-text);border-color:var(--red)">End</button>
+      <button class="back-btn" id="go-home">Home</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab ${tab==='play'?'active':''}" data-wolf-tab="play">Play</button>
+    <button class="tab ${tab==='leaderboard'?'active':''}" data-wolf-tab="leaderboard">Leaderboard</button>
+    <button class="tab ${tab==='prev'?'active':''}" data-wolf-tab="prev">Previous Holes</button>
+  </div>
+  <div class="tab-content">
+    ${tab==='play'        ? renderWolfPlay()        : ''}
+    ${tab==='leaderboard' ? renderWolfLeaderboard() : ''}
+    ${tab==='prev'        ? renderWolfPrev()        : ''}
+  </div>
+  ${wg.editingHole != null ? renderWolfEditModal() : ''}`;
+}
+
+function renderWolfPlay() {
+  const wg = state.wolfGame;
+  const hi = wg.holeInput;
+  const players = state.wolf.players;
+  const winners = players.filter(p => hi.statuses[p] === 'winner');
+  const losers  = players.filter(p => hi.statuses[p] === 'loser');
+  const pot = losers.length * hi.bet;
+  const winEach = winners.length > 0 ? pot / winners.length : 0;
+  let preview = '';
+  if (losers.length > 0 && winners.length > 0) {
+    preview = `<div class="wolf-preview">
+      <div class="ml">${losers.length} loser${losers.length>1?'s':''} × $${hi.bet} = $${pot} pot</div>
+      <div class="ml g">Winners each get +$${winEach%1===0?winEach:winEach.toFixed(2)}</div>
+      <div class="ml r">Losers each pay −$${hi.bet}</div>
+    </div>`;
+  }
+  const cards = players.map(p => {
+    const st = hi.statuses[p] || 'push';
+    const label = st === 'winner' ? 'WIN' : st === 'loser' ? 'LOSS' : 'PUSH';
+    return `<div class="wolf-player-card ${st}" data-wolf-player="${p}">
+      <span class="pname">${p}</span><span class="wolf-status-badge">${label}</span>
+    </div>`;
+  }).join('');
+
+  return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.06em">Hole ${wg.currentHole} <span style="font-size:1rem;color:var(--muted)">of 18</span></div>
+    <div class="bet-adjuster">
+      <div><div class="bet-adj-label">Bet</div>
+      <div style="display:flex;align-items:center;gap:2px"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold-bright)">$</span>
+      <input class="bet-dinput" id="wolf-bet-input" type="number" min="1" value="${hi.bet}"/></div></div>
+      <button class="adj-btn" id="wolf-bet-down">−</button>
+      <button class="adj-btn" id="wolf-bet-up">+</button>
+    </div>
+  </div>
+  <div style="margin-bottom:16px">${cards}</div>
+  ${preview}
+  <button class="big-btn gold" id="wolf-confirm-hole">Confirm Hole ${wg.currentHole}</button>`;
+}
+
+function renderWolfLeaderboard() {
+  const wg = state.wolfGame;
+  const totals = wolfTotals();
+  if (wg.holes.length === 0) return `<div style="text-align:center;color:var(--muted);padding:40px 0">Complete a hole to see standings</div>`;
+  return [...state.wolf.players].sort((a,b)=>totals[b]-totals[a]).map((p,i) => {
+    const net = totals[p];
+    const cls = net>0?'pos':net<0?'neg':'zero';
+    const sign = net>0?'+':'';
+    const wins   = wg.holes.filter(h=>h.results[p]>0).length;
+    const losses = wg.holes.filter(h=>h.results[p]<0).length;
+    return `<div class="lb-row" style="${i===0?'border-color:var(--gold)':''}">
+      <span class="lb-rank ${i===0?'gold':''}">${i===0?'★':i+1}</span>
+      <span class="lb-name">${p}</span>
+      <span class="lb-detail">${wins}W ${losses}L</span>
+      <span class="lb-val ${cls}">${sign}$${fmt(Math.abs(net))}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderWolfPrev() {
+  const wg = state.wolfGame;
+  if (wg.holes.length === 0) return `<div style="text-align:center;color:var(--muted);padding:40px 0">No holes logged yet</div>`;
+  return [...wg.holes].reverse().map((h, ri) => {
+    const i = wg.holes.length - 1 - ri;
+    const chips = state.wolf.players.map(p => `<span class="chip ${h.statuses[p]}">${p}</span>`).join(' ');
+    const results = state.wolf.players.map(p => {
+      const d = h.results[p];
+      if (d===0) return '';
+      return `<span class="chip ${d>0?'green':'red'}">${p}: ${d>0?'+':''}$${fmt(Math.abs(d))}</span>`;
+    }).filter(Boolean).join(' ');
+    return `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold)">Hole ${h.num}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--muted)">$${h.bet}/player</span>
+        <button class="back-btn" data-wolf-edit="${i}">Edit</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">${chips}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">${results}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderWolfEditModal() {
+  const wg = state.wolfGame;
+  const hi = wg.holeInput;
+  const cards = state.wolf.players.map(p => {
+    const st = hi.statuses[p] || 'push';
+    const label = st==='winner'?'WIN':st==='loser'?'LOSS':'PUSH';
+    return `<div class="wolf-player-card ${st}" data-wolf-player="${p}" style="margin-bottom:8px">
+      <span class="pname">${p}</span><span class="wolf-status-badge">${label}</span>
+    </div>`;
+  }).join('');
+  return `<div style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;display:flex;align-items:flex-end;justify-content:center" id="wolf-modal-overlay">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:480px;padding:20px 16px 36px;max-height:85vh;overflow-y:auto">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--gold);margin-bottom:14px">Edit Hole ${wg.holes[wg.editingHole].num}</div>
+      <div class="bet-adjuster" style="margin-bottom:14px;display:inline-flex">
+        <div><div class="bet-adj-label">Bet</div>
+        <div style="display:flex;align-items:center;gap:2px"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold-bright)">$</span>
+        <input class="bet-dinput" id="wolf-bet-input" type="number" min="1" value="${hi.bet}"/></div></div>
+        <button class="adj-btn" id="wolf-bet-down">−</button>
+        <button class="adj-btn" id="wolf-bet-up">+</button>
+      </div>
+      <div>${cards}</div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="big-btn ghost" id="wolf-modal-cancel" style="margin:0;flex:1">Cancel</button>
+        <button class="big-btn gold" id="wolf-modal-save" style="margin:0;flex:1">Save</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function wolfTotals() {
+  const totals = {};
+  state.wolf.players.forEach(p => totals[p] = 0);
+  (state.wolfGame.holes || []).forEach(h => {
+    state.wolf.players.forEach(p => { totals[p] += (h.results[p] || 0); });
+  });
+  return totals;
+}
+
+function wolfHoleResult(bet, statuses, players) {
+  const winners = players.filter(p => statuses[p]==='winner');
+  const losers  = players.filter(p => statuses[p]==='loser');
+  const results = {};
+  players.forEach(p => results[p] = 0);
+  if (winners.length > 0 && losers.length > 0) {
+    const pot = losers.length * bet;
+    const winEach = pot / winners.length;
+    winners.forEach(p => results[p] = winEach);
+    losers.forEach(p  => results[p] = -bet);
+  }
+  return results;
+}
+
+// ═══════════════════════════════════════════
+// NASSAU + SKINS SETUP
+// ═══════════════════════════════════════════
+function renderNSSetup() {
+  const ns = state.nsSetup || {
+    players: [{name:'',hcp:0},{name:'',hcp:0},{name:'',hcp:0},{name:'',hcp:0}],
+    hcpPct: 100,
+    nassau: true,
+    nassauFormat: 'match',
+    nassauPlayers: 4,
+    teamA: [],
+    teamB: [],
+    betFront: 5, betBack: 5, betTotal: 5,
+    autoPress: true,
+    skins: true,
+    skinType: 'net',
+    skinBet: 2,
+    carryover: false,
+  };
+  state.nsSetup = ns;
+
+  const playerRows = ns.players.map((p, i) => {
+    const canRemove = i >= 4 && ns.players.length > 4;
+    return `<div class="player-setup-row">
+      <span class="player-idx">${i+1}</span>
+      <input class="text-input ns-pname" data-idx="${i}" placeholder="Player ${i+1}" value="${p.name}" autocomplete="off"/>
+      <input class="num-input ns-hcp" data-idx="${i}" placeholder="Hcp" value="${p.hcp}" type="number" min="0" max="54"/>
+      ${canRemove ? `<button class="remove-btn" data-ns-remove="${i}">✕</button>` : ''}
+    </div>`;
+  }).join('');
+
+  // Team assignment (only for Nassau)
+  let teamRows = '';
+  if (ns.nassau && ns.players.length >= 2) {
+    teamRows = ns.players.map((p, i) => {
+      const name = p.name || `Player ${i+1}`;
+      const inA = ns.teamA.includes(name);
+      const inB = ns.teamB.includes(name);
+      return `<div class="field-row">
+        <span class="field-label">${name}</span>
+        <div class="team-select">
+          <button class="team-btn ${inA?'selected-a':''}" data-team="A" data-player="${name}">Team A</button>
+          <button class="team-btn ${inB?'selected-b':''}" data-team="B" data-player="${name}">Team B</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  return `<div class="top-bar"><span class="top-bar-title">⛳ NASSAU + SKINS</span><button class="back-btn" id="go-home">Home</button></div>
+  <div class="screen">
+    <div class="section-label">Players & Handicaps</div>
+    <div class="card">${playerRows}
+      ${ns.players.length < 5 ? `<button class="add-btn" id="ns-add-player">+ Add Player (${ns.players.length}/5)</button>` : ''}
+    </div>
+
+    <div class="section-label">Handicap %</div>
+    <div class="card"><div class="field-row"><span class="field-label">% of handicap used</span>
+      <input class="num-input" id="ns-hcp-pct" value="${ns.hcpPct}" min="0" max="100" type="number"/>
+    </div></div>
+
+    <div class="section-label">Nassau</div>
+    <div class="card">
+      <div class="toggle-row" style="margin-bottom:12px">
+        <span class="toggle-label">Enable Nassau</span>
+        <label class="toggle"><input type="checkbox" id="ns-nassau-toggle" ${ns.nassau?'checked':''}/>
+        <span class="toggle-slider"></span></label>
+      </div>
+      ${ns.nassau ? `
+      <div class="field-row"><span class="field-label">Format</span>
+        <div class="seg-control" style="width:160px">
+          <button class="seg-btn ${ns.nassauFormat==='match'?'active':''}" data-nassau-format="match">Match</button>
+          <button class="seg-btn ${ns.nassauFormat==='stroke'?'active':''}" data-nassau-format="stroke">Stroke</button>
+        </div>
+      </div>
+      <div class="field-row"><span class="field-label">Front 9 bet $</span><input class="num-input" id="ns-bet-front" value="${ns.betFront}" type="number" min="0"/></div>
+      <div class="field-row"><span class="field-label">Back 9 bet $</span><input class="num-input" id="ns-bet-back" value="${ns.betBack}" type="number" min="0"/></div>
+      <div class="field-row"><span class="field-label">Overall bet $</span><input class="num-input" id="ns-bet-total" value="${ns.betTotal}" type="number" min="0"/></div>
+      <div class="toggle-row"><span class="toggle-label">2-Down Auto Press</span>
+        <label class="toggle"><input type="checkbox" id="ns-auto-press" ${ns.autoPress?'checked':''}/>
+        <span class="toggle-slider"></span></label>
+      </div>` : ''}
+    </div>
+
+    ${ns.nassau && ns.players.length >= 2 ? `
+    <div class="section-label">Nassau Teams</div>
+    <div class="card">${teamRows}</div>` : ''}
+
+    <div class="section-label">Skins</div>
+    <div class="card">
+      <div class="toggle-row" style="margin-bottom:12px">
+        <span class="toggle-label">Enable Skins</span>
+        <label class="toggle"><input type="checkbox" id="ns-skins-toggle" ${ns.skins?'checked':''}/>
+        <span class="toggle-slider"></span></label>
+      </div>
+      ${ns.skins ? `
+      <div class="field-row"><span class="field-label">Skin type</span>
+        <div class="seg-control">
+          <button class="seg-btn ${ns.skinType==='net'?'active':''}" data-skin-type="net">Net</button>
+          <button class="seg-btn ${ns.skinType==='gross'?'active':''}" data-skin-type="gross">Gross</button>
+          <button class="seg-btn ${ns.skinType==='canadian'?'active':''}" data-skin-type="canadian">🍁 Can</button>
+        </div>
+      </div>
+      <div class="field-row"><span class="field-label">$ per skin</span><input class="num-input" id="ns-skin-bet" value="${ns.skinBet}" type="number" min="1"/></div>
+      <div class="toggle-row"><span class="toggle-label">Carryover skins</span>
+        <label class="toggle"><input type="checkbox" id="ns-carryover" ${ns.carryover?'checked':''}/>
+        <span class="toggle-slider"></span></label>
+      </div>` : ''}
+    </div>
+
+    <button class="big-btn green" id="ns-start">Start Round →</button>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// NASSAU + SKINS GAME
+// ═══════════════════════════════════════════
+function renderNSGame() {
+  const tab = state.nsGame.tab || 'scorecard';
+  const ns = state.nsSetup;
+  const tabs = ['Scorecard'];
+  if (ns.nassau) tabs.push('Nassau');
+  if (ns.skins)  tabs.push('Skins');
+  tabs.push('Summary');
+
+  return `<div class="top-bar"><span class="top-bar-title">⛳ ${SJCC.name.toUpperCase()}</span>
+    <div style="display:flex;gap:6px">
+      <button class="back-btn" id="ns-end-round" style="color:var(--red-text);border-color:var(--red)">End</button>
+      <button class="back-btn" id="go-home">Home</button>
+    </div>
+  </div>
+  <div class="tabs">${tabs.map(t=>`<button class="tab ${tab.toLowerCase()===t.toLowerCase()?'active':''}" data-ns-tab="${t.toLowerCase()}">${t}</button>`).join('')}</div>
+  <div class="tab-content">
+    ${tab==='scorecard' ? renderNSScorecard() : ''}
+    ${tab==='nassau'    ? renderNSNassau()    : ''}
+    ${tab==='skins'     ? renderNSSkins()     : ''}
+    ${tab==='summary'   ? renderNSSummary()   : ''}
+  </div>`;
+}
+
+function renderNSScorecard() {
+  const ng = state.nsGame;
+  const ns = state.nsSetup;
+  const hi = ng.currentHole; // 0-indexed
+  const hole = SJCC.holes[hi];
+  const players = state.players;
+
+  const scoreRows = players.map(p => {
+    const gross = (ng.scores[p.name] || {})[hi];
+    const strokes = strokesOnHole(p.hcp, hole.hcp, ns.hcpPct);
+    const hasScore = gross != null;
+    const net = hasScore ? gross - strokes : null;
+    const slabel = hasScore ? scoreLabel(gross, hole.par) : '';
+
+    return `<div class="score-row">
+      <div style="flex:1">
+        <div class="score-player-name">${p.name}</div>
+        <div style="display:flex;gap:6px;margin-top:2px">
+          <span class="score-player-hcp">Hcp ${p.hcp}</span>
+          ${strokes > 0 ? `<span class="score-stroke-badge">+${strokes} stroke${strokes>1?'s':''}</span>` : ''}
+        </div>
+      </div>
+      <div class="score-adj">
+        <button class="sc-btn" data-sc-down="${p.name}">−</button>
+        <div class="sc-val ${slabel}">${hasScore ? gross : '–'}</div>
+        <button class="sc-btn" data-sc-up="${p.name}">+</button>
+      </div>
+      <div class="sc-net">${net != null ? `net ${net}` : ''}</div>
+    </div>`;
+  }).join('');
+
+  // Nassau live status snippet
+  let nassauSnip = '';
+  if (ns.nassau) {
+    const nr = computeNassauState(ns);
+    const seg = hi < 9 ? 'front' : 'back';
+    const match = seg === 'front' ? nr.front : nr.back;
+    const aNames = ns.teamA.join('/');
+    const bNames = ns.teamB.join('/');
+    nassauSnip = `<div class="hole-result-box" style="margin-bottom:10px">
+      <div class="hole-result-row"><span class="label">${seg === 'front' ? 'Front' : 'Back'} match</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:${match.diff===0?'var(--muted)':match.diff>0?'var(--blue-text)':'var(--purple-text)'}">${match.status}</span>
+      </div>
+      ${ns.autoPress ? `<div class="hole-result-row"><span class="label">Auto press</span><span style="color:var(--muted);font-size:0.72rem">triggers at 2-down</span></div>` : ''}
+      <div style="margin-top:6px"><button class="press-btn" id="ns-manual-press">+ Manual Press</button></div>
+    </div>`;
+  }
+
+  const canGoPrev = hi > 0;
+  const canGoNext = hi < 17;
+
+  return `<div>
+    <div class="hole-nav">
+      <div>
+        <div class="hole-nav-title">Hole ${hole.num}</div>
+        <div class="hole-nav-sub">${SJCC.name}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="back-btn" id="sc-prev" ${canGoPrev?'':'disabled'}>← Prev</button>
+        <button class="back-btn" id="sc-next" ${canGoNext?'':'disabled'}>Next →</button>
+      </div>
+    </div>
+    <div class="hole-meta">
+      <div class="hole-meta-item">Par <span>${hole.par}</span></div>
+      <div class="hole-meta-item">Yds <span>${hole.yds}</span></div>
+      <div class="hole-meta-item">Hcp <span>${hole.hcp}</span></div>
+    </div>
+    <div class="score-entry">${scoreRows}</div>
+    ${nassauSnip}
+  </div>`;
+}
+
+function renderNSNassau() {
+  const ns = state.nsSetup;
+  const nr = computeNassauState(ns);
+  const payouts = nassauPayout(ns, nr);
+  const aNames = ns.teamA.join(' / ');
+  const bNames = ns.teamB.join(' / ');
+
+  function statusColor(diff) {
+    if (diff === 0) return 'var(--muted)';
+    return diff > 0 ? 'var(--blue-text)' : 'var(--purple-text)';
+  }
+  function matchRow(label, match, bet) {
+    return `<div class="nassau-row">
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--white)">${label}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--muted)">${match.holesPlayed} holes played · $${bet}</div>
+      </div>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${statusColor(match.diff)}">${match.status}</span>
+    </div>`;
+  }
+
+  let pressRows = '';
+  if (nr.presses.length > 0) {
+    pressRows = nr.presses.map((pr, i) =>
+      matchRow(`Press ${i+1} (H${pr.startHole+1}+)`, pr.match, pr.bet || ns.betFront)
+    ).join('');
+  }
+
+  let payoutRows = payouts.map(p => {
+    if (!p || p.a === undefined) return '';
+    const winner = p.a > 0 ? `Team A (+$${fmt(p.a)})` : p.b > 0 ? `Team B (+$${fmt(p.b)})` : 'Push';
+    return `<div class="hole-result-row"><span class="label">${p.name}</span>
+      <span style="color:${p.a===0?'var(--muted)':p.a>0?'var(--blue-text)':'var(--purple-text)'}">${p.label||winner}</span>
+    </div>`;
+  }).join('');
+
+  return `<div>
+    <div class="stat-strip">
+      <div class="stat-item"><div class="stat-val" style="color:var(--blue-text)">${aNames}</div><div class="stat-lbl">Team A</div></div>
+      <div class="stat-item"><div class="stat-val" style="color:var(--purple-text)">${bNames}</div><div class="stat-lbl">Team B</div></div>
+    </div>
+    <div class="nassau-section">
+      <div class="nassau-header"><span class="nassau-header-title">Match Status</span></div>
+      ${matchRow('Front 9', nr.front, ns.betFront)}
+      ${matchRow('Back 9', nr.back, ns.betBack)}
+      ${matchRow('Overall', nr.overall, ns.betTotal)}
+      ${pressRows}
+    </div>
+    ${payoutRows ? `<div class="card"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:8px">Current Payouts</div>
+      <div class="hole-result-box" style="margin:0">${payoutRows}</div></div>` : ''}
+    <button class="big-btn ghost" id="ns-manual-press" style="margin-top:4px">+ Add Manual Press</button>
+  </div>`;
+}
+
+function renderNSSkins() {
+  const ns = state.nsSetup;
+  const skinsState = computeSkinsState(ns);
+  const totals = skinsTotals(skinsState, ns.skinBet, state.players);
+  const sorted = [...state.players].sort((a,b) => totals[b.name] - totals[a.name]);
+
+  const skinTypeLabel = ns.skinType === 'canadian' ? '🍁 Canadian' : ns.skinType === 'gross' ? 'Gross' : 'Net';
+
+  const lbRows = sorted.map((p, i) => {
+    const net = totals[p.name];
+    const cls = net>0?'pos':net<0?'neg':'zero';
+    const sign = net>0?'+':'';
+    const won = skinsState.filter(s=>s.winner===p.name).length;
+    return `<div class="lb-row ${i===0&&net>0?'':''}">
+      <span class="lb-rank ${i===0&&net>0?'gold':''}">${i===0&&net>0?'★':i+1}</span>
+      <span class="lb-name">${p.name}</span>
+      <span class="lb-detail">${won} skin${won!==1?'s':''}</span>
+      <span class="lb-val ${cls}">${sign}$${fmt(Math.abs(net))}</span>
+    </div>`;
+  }).join('');
+
+  const holeRows = skinsState.map(s => {
+    const hole = SJCC.holes[s.hole-1];
+    if (s.pending) return `<div class="hole-result-row" style="padding:5px 0"><span class="label" style="color:var(--muted)">Hole ${s.hole} (Par ${hole.par})</span><span class="chip gray">Pending${s.carried?' · Carried':''}${s.pot>1?' · '+s.pot+'x':''}</span></div>`;
+    if (s.push) return `<div class="hole-result-row" style="padding:5px 0"><span class="label" style="color:var(--muted)">Hole ${s.hole} (Par ${hole.par})</span><span class="chip gray">Push${ns.carryover?' → Carries':''}</span></div>`;
+    return `<div class="hole-result-row" style="padding:5px 0"><span class="label" style="color:var(--muted)">Hole ${s.hole} (Par ${hole.par})</span>
+      <span class="chip green">${s.winner}${s.carried?' ('+s.pot+'x)':''}</span></div>`;
+  }).join('');
+
+  return `<div>
+    <div class="stat-strip">
+      <div class="stat-item"><div class="stat-val">${skinTypeLabel}</div><div class="stat-lbl">Format</div></div>
+      <div class="stat-item"><div class="stat-val">$${ns.skinBet}</div><div class="stat-lbl">Per Skin</div></div>
+      <div class="stat-item"><div class="stat-val">${ns.carryover?'Yes':'No'}</div><div class="stat-lbl">Carryover</div></div>
+    </div>
+    <div class="lb-card"><div class="lb-card-header">Skins Leaderboard</div>${lbRows}</div>
+    <div class="card"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:8px">Hole by Hole</div>
+      ${holeRows}
+    </div>
+  </div>`;
+}
+
+function renderNSSummary() {
+  const ns = state.nsSetup;
+  const totals = {};
+  state.players.forEach(p => totals[p.name] = 0);
+
+  // Add skins
+  if (ns.skins) {
+    const sk = skinsTotals(computeSkinsState(ns), ns.skinBet, state.players);
+    state.players.forEach(p => totals[p.name] += sk[p.name] || 0);
+  }
+
+  // Add nassau
+  if (ns.nassau) {
+    const nr = computeNassauState(ns);
+    const payouts = nassauPayout(ns, nr);
+    payouts.forEach(po => {
+      if (!po || po.a === undefined) return;
+      ns.teamA.forEach(n => totals[n] = (totals[n]||0) + (po.a / ns.teamA.length));
+      ns.teamB.forEach(n => totals[n] = (totals[n]||0) + (po.b / ns.teamB.length));
+    });
+  }
+
+  const sorted = [...state.players].sort((a,b) => totals[b.name] - totals[a.name]);
+  const rows = sorted.map((p, i) => {
+    const net = totals[p.name];
+    const cls = net>0?'pos':net<0?'neg':'zero';
+    const sign = net>0?'+':'';
+    return `<div class="lb-row">
+      <span class="lb-rank ${i===0?'gold':''}">${i===0?'★':i+1}</span>
+      <span class="lb-name">${p.name}</span>
+      <span class="lb-val ${cls}" style="font-size:1.5rem">${sign}$${fmt(Math.abs(net))}</span>
+    </div>`;
+  }).join('');
+
+  const holesPlayed = Object.values(state.nsGame.scores[state.players[0]?.name] || {}).filter(v=>v!=null).length;
+
+  return `<div>
+    <div class="stat-strip">
+      <div class="stat-item"><div class="stat-val">${holesPlayed}</div><div class="stat-lbl">Holes</div></div>
+      <div class="stat-item"><div class="stat-val">${SJCC.holes.slice(0,holesPlayed).reduce((s,h)=>s+h.par,0)}</div><div class="stat-lbl">Par</div></div>
+      <div class="stat-item"><div class="stat-val">${state.players.length}</div><div class="stat-lbl">Players</div></div>
+    </div>
+    <div class="lb-card"><div class="lb-card-header">Net Totals</div>${rows}</div>
+    <button class="big-btn green" id="ns-new-round">New Round</button>
+    <button class="big-btn ghost" id="ns-back-to-game">← Back to Round</button>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════
+function fmt(n) { return n % 1 === 0 ? n : n.toFixed(2); }
+
+// ═══════════════════════════════════════════
+// EVENTS
+// ═══════════════════════════════════════════
 function attachEvents() {
-  if (state.screen === 'setup') attachSetupEvents();
-  else if (state.screen === 'game') attachGameEvents();
-  else if (state.screen === 'end') attachEndEvents();
+  const s = state.screen;
+  // Universal
+  document.getElementById('go-home')?.addEventListener('click', () => { state.screen = 'home'; render(); });
+
+  if (s === 'home')      attachHomeEvents();
+  if (s === 'wolf-setup') attachWolfSetupEvents();
+  if (s === 'wolf-game')  attachWolfGameEvents();
+  if (s === 'ns-setup')   attachNSSetupEvents();
+  if (s === 'ns-game')    attachNSGameEvents();
 }
 
-function attachSetupEvents() {
-  document.querySelectorAll('.player-name-input').forEach(input => {
-    input.addEventListener('input', e => {
-      state.players[parseInt(e.target.dataset.idx)] = e.target.value;
+function attachHomeEvents() {
+  document.getElementById('home-wolf')?.addEventListener('click', () => { state.screen = 'wolf-setup'; render(); });
+  document.getElementById('home-ns')?.addEventListener('click',   () => { state.screen = 'ns-setup';   render(); });
+  document.getElementById('resume-wolf')?.addEventListener('click', () => { state.screen = 'wolf-game'; render(); });
+  document.getElementById('resume-ns')?.addEventListener('click',   () => { state.screen = 'ns-game';   render(); });
+}
+
+function attachWolfSetupEvents() {
+  document.querySelectorAll('.wolf-pname').forEach(inp => {
+    inp.addEventListener('input', e => { state.wolf.players[parseInt(e.target.dataset.idx)] = e.target.value; });
+    inp.addEventListener('blur', () => render());
+  });
+  document.querySelectorAll('[data-wolf-remove]').forEach(btn => {
+    btn.addEventListener('click', e => { state.wolf.players.splice(parseInt(e.target.dataset.wolfRemove),1); render(); });
+  });
+  document.getElementById('wolf-add-player')?.addEventListener('click', () => { state.wolf.players.push(''); render(); });
+  document.getElementById('wolf-default-bet')?.addEventListener('input', e => { state.wolf.defaultBet = parseFloat(e.target.value)||5; });
+  document.getElementById('wolf-start')?.addEventListener('click', () => {
+    state.wolf.players = state.wolf.players.map((p,i)=>p.trim()||`Player ${i+1}`);
+    state.wolfGame = {
+      tab: 'play', holes: [], currentHole: 1, editingHole: null,
+      holeInput: { bet: state.wolf.defaultBet, statuses: {} }
+    };
+    state.wolf.players.forEach(p => state.wolfGame.holeInput.statuses[p] = 'push');
+    state.wolfSaved = true;
+    state.screen = 'wolf-game';
+    render();
+  });
+}
+
+function attachWolfGameEvents() {
+  const wg = state.wolfGame;
+  document.querySelectorAll('[data-wolf-tab]').forEach(t => {
+    t.addEventListener('click', e => { wg.tab = e.target.dataset.wolfTab; render(); });
+  });
+  document.getElementById('wolf-end-round')?.addEventListener('click', () => {
+    state.wolfSaved = false; state.screen = 'home'; render();
+  });
+
+  // Bet
+  const betInput = document.getElementById('wolf-bet-input');
+  betInput?.addEventListener('input', e => { const v=parseInt(e.target.value); if(!isNaN(v)&&v>=1) wg.holeInput.bet=v; });
+  betInput?.addEventListener('blur', ()=>render());
+  document.getElementById('wolf-bet-up')?.addEventListener('click', ()=>{ wg.holeInput.bet=Math.max(1,wg.holeInput.bet+1); render(); });
+  document.getElementById('wolf-bet-down')?.addEventListener('click', ()=>{ wg.holeInput.bet=Math.max(1,wg.holeInput.bet-1); render(); });
+
+  // Player cards
+  document.querySelectorAll('[data-wolf-player]').forEach(card => {
+    card.addEventListener('click', () => {
+      const p = card.dataset.wolfPlayer;
+      const cur = wg.holeInput.statuses[p] || 'push';
+      const cycle = { push:'winner', winner:'loser', loser:'push' };
+      wg.holeInput.statuses[p] = cycle[cur];
+      render();
     });
   });
 
-  document.querySelectorAll('[data-remove]').forEach(btn => {
+  // Confirm
+  document.getElementById('wolf-confirm-hole')?.addEventListener('click', () => {
+    const hi = wg.holeInput;
+    const results = wolfHoleResult(hi.bet, hi.statuses, state.wolf.players);
+    wg.holes.push({ num: wg.currentHole, bet: hi.bet, statuses: {...hi.statuses}, results });
+    wg.currentHole++;
+    wg.holeInput = { bet: state.wolf.defaultBet, statuses: {} };
+    state.wolf.players.forEach(p => wg.holeInput.statuses[p] = 'push');
+    render();
+  });
+
+  // Prev holes edit
+  document.querySelectorAll('[data-wolf-edit]').forEach(btn => {
     btn.addEventListener('click', e => {
-      const idx = parseInt(e.target.dataset.remove);
-      state.players.splice(idx, 1);
+      const idx = parseInt(e.target.dataset.wolfEdit);
+      wg.editingHole = idx;
+      const h = wg.holes[idx];
+      wg.holeInput = { bet: h.bet, statuses: {...h.statuses} };
       render();
     });
   });
 
-  const addBtn = document.getElementById('add-player-btn');
-  if (addBtn) addBtn.addEventListener('click', () => {
-    if (state.players.length < 5) { state.players.push(''); render(); }
-  });
-
-  const betInput = document.getElementById('default-bet');
-  if (betInput) betInput.addEventListener('input', e => {
-    state.defaultBet = parseFloat(e.target.value) || 5;
-  });
-
-  document.getElementById('start-btn').addEventListener('click', () => {
-    // clean up names
-    state.players = state.players.map((p,i) => p.trim() || `Player ${i+1}`);
-    if (state.players.length < 2) { alert('Need at least 2 players.'); return; }
-    state.screen = 'game';
-    state.holes = [];
-    state.currentHole = 1;
-    state.activeTab = 'play';
-    state.editingHole = null;
-    state.holeInput = { bet: state.defaultBet, statuses: {} };
-    state.players.forEach(p => state.holeInput.statuses[p] = 'push');
-    render();
-  });
-}
-
-function attachGameEvents() {
-  // tabs
-  document.querySelectorAll('.tab').forEach(t => {
-    t.addEventListener('click', e => {
-      state.activeTab = e.target.dataset.tab;
+  // Modal
+  if (wg.editingHole != null) {
+    document.getElementById('wolf-modal-cancel')?.addEventListener('click', () => {
+      wg.editingHole = null;
+      wg.holeInput = { bet: state.wolf.defaultBet, statuses: {} };
+      state.wolf.players.forEach(p => wg.holeInput.statuses[p] = 'push');
       render();
     });
-  });
-
-  document.getElementById('end-round-btn')?.addEventListener('click', () => {
-    if (state.holes.length === 0) { alert('Complete at least one hole first.'); return; }
-    state.screen = 'end';
-    render();
-  });
-
-  if (state.activeTab === 'play') {
-    // bet adjusters
-    document.getElementById('bet-up')?.addEventListener('click', () => {
-      state.holeInput.bet = Math.max(1, state.holeInput.bet + 1);
-      render();
-    });
-    document.getElementById('bet-down')?.addEventListener('click', () => {
-      state.holeInput.bet = Math.max(1, state.holeInput.bet - 1);
-      render();
-    });
-    document.getElementById('bet-input')?.addEventListener('input', e => {
-      const val = parseInt(e.target.value);
-      if (!isNaN(val) && val >= 1) state.holeInput.bet = val;
-    });
-    document.getElementById('bet-input')?.addEventListener('blur', () => {
-      render();
-    });
-
-    // player cards cycle: none→winner→loser→push→winner…
-    document.querySelectorAll('.player-card[data-player]').forEach(card => {
-      card.addEventListener('click', e => {
-        const p = card.dataset.player;
-        const cur = state.holeInput.statuses[p] || 'push';
-        const cycle = { push: 'winner', winner: 'loser', loser: 'push' };
-        state.holeInput.statuses[p] = cycle[cur];
-        render();
-      });
-    });
-
-    document.getElementById('confirm-hole-btn')?.addEventListener('click', () => {
-      const hi = state.holeInput;
-      const results = computeHoleResult(hi.bet, hi.statuses);
-      state.holes.push({
-        num: state.currentHole,
-        bet: hi.bet,
-        statuses: { ...hi.statuses },
-        results
-      });
-      state.currentHole++;
-      state.holeInput = { bet: state.defaultBet, statuses: {} };
-      state.players.forEach(p => state.holeInput.statuses[p] = 'push');
-      render();
-    });
-  }
-
-  if (state.activeTab === 'prev') {
-    document.querySelectorAll('.edit-hole-btn').forEach(btn => {
-      btn.addEventListener('click', e => {
-        const idx = parseInt(e.target.dataset.edit);
-        state.editingHole = idx;
-        const h = state.holes[idx];
-        state.holeInput = { bet: h.bet, statuses: { ...h.statuses } };
-        render();
-      });
-    });
-  }
-
-  // modal
-  if (state.editingHole !== null) {
-    document.getElementById('modal-cancel')?.addEventListener('click', () => {
-      state.editingHole = null;
-      state.holeInput = { bet: state.defaultBet, statuses: {} };
-      state.players.forEach(p => state.holeInput.statuses[p] = 'push');
-      render();
-    });
-
-    document.getElementById('modal-overlay')?.addEventListener('click', e => {
-      if (e.target.id === 'modal-overlay') {
-        state.editingHole = null;
-        state.holeInput = { bet: state.defaultBet, statuses: {} };
-        state.players.forEach(p => state.holeInput.statuses[p] = 'push');
-        render();
+    document.getElementById('wolf-modal-overlay')?.addEventListener('click', e => {
+      if (e.target.id==='wolf-modal-overlay') {
+        wg.editingHole=null; wg.holeInput={bet:state.wolf.defaultBet,statuses:{}};
+        state.wolf.players.forEach(p=>wg.holeInput.statuses[p]='push'); render();
       }
     });
-
-    document.getElementById('modal-save')?.addEventListener('click', () => {
-      const hi = state.holeInput;
-      const results = computeHoleResult(hi.bet, hi.statuses);
-      state.holes[state.editingHole].bet = hi.bet;
-      state.holes[state.editingHole].statuses = { ...hi.statuses };
-      state.holes[state.editingHole].results = results;
-      state.editingHole = null;
-      state.holeInput = { bet: state.defaultBet, statuses: {} };
-      state.players.forEach(p => state.holeInput.statuses[p] = 'push');
-      render();
-    });
-
-    document.getElementById('bet-up')?.addEventListener('click', () => {
-      state.holeInput.bet = Math.max(1, state.holeInput.bet + 1);
-      render();
-    });
-    document.getElementById('bet-down')?.addEventListener('click', () => {
-      state.holeInput.bet = Math.max(1, state.holeInput.bet - 1);
-      render();
-    });
-    document.getElementById('bet-input')?.addEventListener('input', e => {
-      const val = parseInt(e.target.value);
-      if (!isNaN(val) && val >= 1) state.holeInput.bet = val;
-    });
-    document.getElementById('bet-input')?.addEventListener('blur', () => {
-      render();
-    });
-
-    document.querySelectorAll('.player-card[data-player]').forEach(card => {
-      card.addEventListener('click', () => {
-        const p = card.dataset.player;
-        const cur = state.holeInput.statuses[p] || 'push';
-        const cycle = { push: 'winner', winner: 'loser', loser: 'push' };
-        state.holeInput.statuses[p] = cycle[cur];
-        render();
-      });
+    document.getElementById('wolf-modal-save')?.addEventListener('click', () => {
+      const hi = wg.holeInput;
+      wg.holes[wg.editingHole] = { ...wg.holes[wg.editingHole], bet:hi.bet, statuses:{...hi.statuses}, results:wolfHoleResult(hi.bet,hi.statuses,state.wolf.players) };
+      wg.editingHole=null; wg.holeInput={bet:state.wolf.defaultBet,statuses:{}};
+      state.wolf.players.forEach(p=>wg.holeInput.statuses[p]='push'); render();
     });
   }
 }
 
-function attachEndEvents() {
-  document.getElementById('new-round-btn')?.addEventListener('click', () => {
-    state.screen = 'setup';
-    state.holes = [];
-    state.currentHole = 1;
-    state.holeInput = { bet: state.defaultBet, statuses: {} };
+function attachNSSetupEvents() {
+  const ns = state.nsSetup;
+  document.querySelectorAll('.ns-pname').forEach(inp => {
+    inp.addEventListener('input', e => { ns.players[parseInt(e.target.dataset.idx)].name = e.target.value; });
+    inp.addEventListener('blur', () => render());
+  });
+  document.querySelectorAll('.ns-hcp').forEach(inp => {
+    inp.addEventListener('input', e => { ns.players[parseInt(e.target.dataset.idx)].hcp = parseFloat(e.target.value)||0; });
+  });
+  document.querySelectorAll('[data-ns-remove]').forEach(btn => {
+    btn.addEventListener('click', e => { ns.players.splice(parseInt(e.target.dataset.nsRemove),1); render(); });
+  });
+  document.getElementById('ns-add-player')?.addEventListener('click', () => { ns.players.push({name:'',hcp:0}); render(); });
+  document.getElementById('ns-hcp-pct')?.addEventListener('input', e => { ns.hcpPct=parseFloat(e.target.value)||100; });
+  document.getElementById('ns-nassau-toggle')?.addEventListener('change', e => { ns.nassau=e.target.checked; render(); });
+  document.getElementById('ns-skins-toggle')?.addEventListener('change', e => { ns.skins=e.target.checked; render(); });
+  document.getElementById('ns-auto-press')?.addEventListener('change', e => { ns.autoPress=e.target.checked; });
+  document.getElementById('ns-carryover')?.addEventListener('change', e => { ns.carryover=e.target.checked; render(); });
+  document.getElementById('ns-bet-front')?.addEventListener('input', e => { ns.betFront=parseFloat(e.target.value)||0; });
+  document.getElementById('ns-bet-back')?.addEventListener('input', e => { ns.betBack=parseFloat(e.target.value)||0; });
+  document.getElementById('ns-bet-total')?.addEventListener('input', e => { ns.betTotal=parseFloat(e.target.value)||0; });
+  document.getElementById('ns-skin-bet')?.addEventListener('input', e => { ns.skinBet=parseFloat(e.target.value)||1; });
+  document.querySelectorAll('[data-nassau-format]').forEach(btn => {
+    btn.addEventListener('click', e => { ns.nassauFormat=e.target.dataset.nassauFormat; render(); });
+  });
+  document.querySelectorAll('[data-skin-type]').forEach(btn => {
+    btn.addEventListener('click', e => { ns.skinType=e.target.dataset.skinType; render(); });
+  });
+  // Team assignment
+  document.querySelectorAll('[data-team]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const team = e.target.dataset.team;
+      const player = e.target.dataset.player;
+      if (team==='A') {
+        ns.teamA = [...new Set([...ns.teamA, player])];
+        ns.teamB = ns.teamB.filter(p=>p!==player);
+      } else {
+        ns.teamB = [...new Set([...ns.teamB, player])];
+        ns.teamA = ns.teamA.filter(p=>p!==player);
+      }
+      render();
+    });
+  });
+
+  document.getElementById('ns-start')?.addEventListener('click', () => {
+    // Validate
+    ns.players = ns.players.map((p,i)=>({...p, name:p.name.trim()||`Player ${i+1}`}));
+    if (!ns.nassau && !ns.skins) { alert('Enable Nassau, Skins, or both.'); return; }
+    if (ns.nassau && (ns.teamA.length===0||ns.teamB.length===0)) { alert('Assign players to both teams for Nassau.'); return; }
+
+    // Init scores object
+    const scores = {};
+    ns.players.forEach(p => { scores[p.name] = {}; });
+
+    state.players = ns.players;
+    state.nsGame = {
+      tab: 'scorecard',
+      currentHole: 0,
+      scores,
+      presses: [],
+    };
+    state.nsSaved = true;
+    state.screen = 'ns-game';
     render();
   });
-  document.getElementById('continue-btn')?.addEventListener('click', () => {
-    state.screen = 'game';
-    state.activeTab = 'play';
+}
+
+function attachNSGameEvents() {
+  const ng = state.nsGame;
+  const ns = state.nsSetup;
+
+  document.querySelectorAll('[data-ns-tab]').forEach(t => {
+    t.addEventListener('click', e => { ng.tab = e.target.dataset.nsTab; render(); });
+  });
+  document.getElementById('ns-end-round')?.addEventListener('click', () => { state.nsSaved=false; state.screen='home'; render(); });
+  document.getElementById('sc-prev')?.addEventListener('click', () => { if(ng.currentHole>0){ng.currentHole--; render();} });
+  document.getElementById('sc-next')?.addEventListener('click', () => { if(ng.currentHole<17){ng.currentHole++; render();} });
+
+  // Score adjusters
+  document.querySelectorAll('[data-sc-up]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const p = e.target.dataset.scUp;
+      const hi = ng.currentHole;
+      if (!ng.scores[p]) ng.scores[p] = {};
+      const par = SJCC.holes[hi].par;
+      ng.scores[p][hi] = (ng.scores[p][hi] != null ? ng.scores[p][hi] : par - 1) + 1;
+      checkAutoPress(hi);
+      render();
+    });
+  });
+  document.querySelectorAll('[data-sc-down]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const p = e.target.dataset.scDown;
+      const hi = ng.currentHole;
+      if (!ng.scores[p]) ng.scores[p] = {};
+      const par = SJCC.holes[hi].par;
+      const cur = ng.scores[p][hi] != null ? ng.scores[p][hi] : par + 1;
+      ng.scores[p][hi] = Math.max(1, cur - 1);
+      checkAutoPress(hi);
+      render();
+    });
+  });
+
+  // Manual press
+  document.getElementById('ns-manual-press')?.addEventListener('click', () => {
+    const hi = ng.currentHole;
+    const seg = hi < 9 ? 'front' : 'back';
+    ng.presses = ng.presses || [];
+    ng.presses.push({ startHole: hi, segment: seg, bet: seg==='front'?ns.betFront:ns.betBack, manual:true });
+    ns.presses = ng.presses;
     render();
   });
+
+  document.getElementById('ns-new-round')?.addEventListener('click', () => { state.screen='ns-setup'; state.nsSaved=false; render(); });
+  document.getElementById('ns-back-to-game')?.addEventListener('click', () => { ng.tab='scorecard'; render(); });
+}
+
+function checkAutoPress(holeIdx) {
+  const ns = state.nsSetup;
+  if (!ns.nassau || !ns.autoPress) return;
+  const ng = state.nsGame;
+  ng.presses = ng.presses || [];
+  ns.presses = ng.presses;
+
+  const nr = computeNassauState(ns);
+  const seg = holeIdx < 9 ? 'front' : 'back';
+  const match = seg==='front' ? nr.front : nr.back;
+
+  // Check if 2 down and no press already started at this hole
+  if (Math.abs(match.diff) >= 2) {
+    const alreadyPressed = ng.presses.some(p => p.startHole === holeIdx+1 && p.segment===seg && !p.manual);
+    if (!alreadyPressed && holeIdx+1 <= (seg==='front'?8:17)) {
+      ng.presses.push({ startHole: holeIdx+1, segment:seg, bet: seg==='front'?ns.betFront:ns.betBack, auto:true });
+      ns.presses = ng.presses;
+    }
+  }
 }
 
 // ── BOOT ──
