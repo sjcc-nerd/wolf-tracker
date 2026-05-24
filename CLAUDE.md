@@ -116,7 +116,6 @@ Numeric inputs (scores, bets) call `render()` immediately on change.
 ## Known Issues / Backlog
 
 - Nassau stroke play mode — logic scaffolded but not implemented
-- No score editing after advancing holes in Nassau/Skins (edit only in Wolf via Previous Holes tab)
 - Auto press edge cases at end of front/back 9 not fully stress-tested
 - No confirmation screen before ending a round
 - No multi-course support — SJCC is hardcoded
