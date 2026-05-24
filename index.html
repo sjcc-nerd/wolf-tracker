@@ -1634,7 +1634,7 @@ render();
 // Register service worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/tbd-scoring/sw.js')
+    navigator.serviceWorker.register('/wolf-tracker/sw.js')
       .then(reg => {
         // Check for updates every time the page loads
         reg.update();
