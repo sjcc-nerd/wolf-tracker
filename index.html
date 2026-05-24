@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>TBD Scoring</title>
+<title>SJCC Test Scoring App</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -23,10 +23,10 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .screen { flex: 1; overflow-y: auto; padding: 20px 16px 40px; }
 .top-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 .top-bar-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; color: var(--gold-bright); }
-.back-btn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; padding: 5px 10px; cursor: pointer; }
+.back-btn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; padding: 5px 10px; cursor: pointer; touch-action: manipulation; }
 .back-btn:hover { border-color: var(--gold); color: var(--gold); }
 .tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; overflow-x: auto; }
-.tab { flex: 1; min-width: 70px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 10px 4px; cursor: pointer; white-space: nowrap; }
+.tab { flex: 1; min-width: 70px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 10px 4px; cursor: pointer; white-space: nowrap; touch-action: manipulation; }
 .tab.active { color: var(--gold-bright); border-bottom-color: var(--gold-bright); }
 .tab-content { flex: 1; overflow-y: auto; padding: 16px; }
 .section-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); margin-bottom: 8px; margin-top: 16px; }
@@ -48,7 +48,7 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .toggle-slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: var(--white); border-radius: 50%; transition: 0.2s; }
 .toggle input:checked + .toggle-slider { background: var(--green); }
 .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
-.big-btn { width: 100%; border: none; border-radius: var(--radius); font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.12em; padding: 15px; cursor: pointer; transition: all 0.15s; margin-bottom: 10px; }
+.big-btn { width: 100%; border: none; border-radius: var(--radius); font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.12em; padding: 15px; cursor: pointer; transition: all 0.15s; margin-bottom: 10px; touch-action: manipulation; }
 .big-btn:active { transform: scale(0.98); }
 .big-btn.green { background: var(--green); color: var(--white); }
 .big-btn.green:hover { background: var(--green-bright); }
@@ -65,14 +65,14 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .chip.gray { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
 .chip.gold { background: var(--gold-dim); color: var(--gold-bright); border: 1px solid var(--gold); }
 .seg-control { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
-.seg-btn { flex: 1; background: none; border: none; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; padding: 7px 4px; cursor: pointer; transition: all 0.15s; }
+.seg-btn { flex: 1; background: none; border: none; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; padding: 7px 4px; cursor: pointer; transition: all 0.15s; touch-action: manipulation; }
 .seg-btn.active { background: var(--gold); color: var(--bg); font-weight: 600; }
 
 /* ── HOME ── */
 .home-logo { text-align: center; padding: 32px 0 24px; }
 .home-logo h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; letter-spacing: 0.12em; color: var(--gold-bright); line-height: 1; }
 .home-logo p { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 6px; }
-.game-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 16px; }
+.game-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 16px; touch-action: manipulation; }
 .game-card:hover, .game-card:active { border-color: var(--gold); background: var(--surface2); }
 .game-card-icon { font-size: 2rem; width: 48px; text-align: center; flex-shrink: 0; }
 .game-card-text h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.1em; color: var(--white); }
@@ -108,7 +108,7 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .score-player-hcp { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); }
 .score-stroke-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--gold-bright); background: var(--gold-dim); border-radius: 4px; padding: 1px 5px; }
 .score-adj { display: flex; align-items: center; gap: 6px; }
-.sc-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; color: var(--white); width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sc-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; color: var(--white); width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; touch-action: manipulation; }
 .sc-btn:hover { border-color: var(--gold); }
 .sc-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--white); min-width: 32px; text-align: center; }
 .sc-val.eagle { color: #f0e68c; }
@@ -155,7 +155,7 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .stat-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 
 /* ── WOLF (inline) ── */
-.wolf-player-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; transition: all 0.15s; user-select: none; margin-bottom: 8px; }
+.wolf-player-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; transition: all 0.15s; user-select: none; margin-bottom: 8px; touch-action: manipulation; }
 .wolf-player-card.winner { background: var(--green-dim); border-color: var(--green-text); }
 .wolf-player-card.loser { background: var(--red-dim); border-color: var(--red-text); }
 .wolf-player-card.push { background: var(--surface2); border-color: var(--muted); }
@@ -173,7 +173,7 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .wolf-preview .ml.r { color: var(--red-text); }
 .bet-adjuster { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; }
 .bet-adj-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; }
-.adj-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--white); width: 28px; height: 28px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.adj-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--white); width: 28px; height: 28px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
 .adj-btn:hover { border-color: var(--gold); }
 .bet-dinput { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--gold-bright); background: none; border: none; border-bottom: 1px solid var(--gold); width: 52px; text-align: center; outline: none; -moz-appearance: textfield; }
 .bet-dinput::-webkit-outer-spin-button, .bet-dinput::-webkit-inner-spin-button { -webkit-appearance: none; }
@@ -466,7 +466,140 @@ function renderHome() {
   const hasWolf = state.screen === 'home' && state.wolfState;
   const hasNS   = state.screen === 'home' && state.nsState;
   return `<div class="screen">
-    <div class="home-logo"><h1>TBD SCORING</h1><p>Golf Gambling Tracker</p></div>
+    <div class="home-logo">
+      <svg width="100%" viewBox="0 0 380 300" role="img" xmlns="http://www.w3.org/2000/svg" style="max-width:320px;display:block;margin:0 auto">
+        <title>SJCC Oak Tree</title>
+        <desc>Sculptural oak tree with sprawling branches, propped limb, and fuller canopy</desc>
+        <style>
+          .trunk { fill: #3d2208; }
+          .bark-line { fill: none; stroke: #2a1504; stroke-linecap: round; }
+          .br { fill: none; stroke: #3d2208; stroke-linecap: round; stroke-linejoin: round; }
+          .br-light { fill: none; stroke: #5c3518; stroke-linecap: round; }
+          .leaf { fill: #2e6e24; }
+          .leaf-mid { fill: #3a8a2e; }
+          .leaf-hi { fill: #4aa83a; }
+          .prop { fill: none; stroke: #2a1504; stroke-linecap: round; }
+          .oak-shadow { fill: #0a1a06; opacity: 0.25; }
+        </style>
+        <ellipse cx="185" cy="284" rx="90" ry="9" class="oak-shadow"/>
+        <line x1="96" y1="172" x2="88" y2="272" class="prop" stroke-width="6"/>
+        <line x1="88" y1="272" x2="100" y2="274" class="prop" stroke-width="4"/>
+        <line x1="88" y1="272" x2="76" y2="274" class="prop" stroke-width="4"/>
+        <path d="M160 266 Q148 274 132 270 Q120 268 112 272" class="br" stroke-width="5"/>
+        <path d="M165 270 Q158 280 148 282" class="br" stroke-width="3"/>
+        <path d="M210 266 Q222 274 238 270 Q250 268 258 272" class="br" stroke-width="5"/>
+        <path d="M205 270 Q212 280 222 282" class="br" stroke-width="3"/>
+        <path d="M160 268 Q154 230 150 195 Q147 165 152 138 Q156 118 164 102 Q170 88 178 76 L186 78 Q193 91 200 106 Q208 122 212 143 Q216 170 214 200 Q212 235 205 268 Z" class="trunk"/>
+        <path d="M175 265 Q172 235 170 200 Q168 172 172 145 Q175 125 182 108 Q184 125 188 148 Q192 175 190 202 Q188 232 185 265 Z" fill="#2a1504" opacity="0.45"/>
+        <path d="M165 245 Q170 240 174 244" class="bark-line" stroke-width="1.2"/>
+        <path d="M205 250 Q200 245 196 248" class="bark-line" stroke-width="1.2"/>
+        <path d="M162 218 Q167 213 171 216" class="bark-line" stroke-width="1.2"/>
+        <path d="M210 222 Q205 218 201 220" class="bark-line" stroke-width="1.2"/>
+        <path d="M156 192 Q161 188 165 191" class="bark-line" stroke-width="1.1"/>
+        <path d="M212 196 Q207 192 203 194" class="bark-line" stroke-width="1.1"/>
+        <path d="M158 165 Q163 161 167 164" class="bark-line" stroke-width="1"/>
+        <path d="M210 168 Q205 164 201 167" class="bark-line" stroke-width="1"/>
+        <path d="M158 148 Q130 138 108 132 Q80 124 58 120 Q36 116 18 122" class="br" stroke-width="18"/>
+        <path d="M18 122 Q10 126 8 134 Q6 142 12 148" class="br" stroke-width="14"/>
+        <path d="M68 120 Q54 108 44 96 Q36 86 32 74" class="br" stroke-width="8"/>
+        <path d="M32 74 Q28 64 30 54 Q32 44 38 38" class="br" stroke-width="5"/>
+        <path d="M38 38 Q42 30 46 26" class="br" stroke-width="3.5"/>
+        <path d="M32 74 Q22 68 16 60" class="br" stroke-width="4"/>
+        <path d="M108 130 Q100 114 96 98 Q93 85 96 72" class="br" stroke-width="7"/>
+        <path d="M96 72 Q94 60 98 50 Q102 40 108 34" class="br" stroke-width="5"/>
+        <path d="M108 34 Q112 26 116 22" class="br" stroke-width="3"/>
+        <path d="M96 72 Q86 64 80 54" class="br" stroke-width="4"/>
+        <path d="M44 96 Q38 84 36 72" class="br" stroke-width="4"/>
+        <path d="M200 132 Q220 118 242 108 Q264 98 286 92" class="br" stroke-width="12"/>
+        <path d="M286 92 Q300 88 310 82 Q320 76 326 68" class="br" stroke-width="8"/>
+        <path d="M326 68 Q332 60 334 50 Q336 40 332 32" class="br" stroke-width="5"/>
+        <path d="M332 32 Q330 24 328 18" class="br" stroke-width="3"/>
+        <path d="M310 82 Q316 70 318 58" class="br" stroke-width="4"/>
+        <path d="M286 92 Q288 78 286 66 Q284 56 280 48" class="br" stroke-width="6"/>
+        <path d="M280 48 Q278 38 280 28" class="br" stroke-width="4"/>
+        <path d="M242 108 Q246 92 244 78 Q242 66 238 56" class="br" stroke-width="6"/>
+        <path d="M238 56 Q236 44 238 34" class="br" stroke-width="4"/>
+        <path d="M182 100 Q176 82 172 64 Q168 48 170 34" class="br" stroke-width="8"/>
+        <path d="M170 34 Q168 22 170 14" class="br" stroke-width="5"/>
+        <path d="M170 34 Q160 26 154 18" class="br" stroke-width="4"/>
+        <path d="M182 100 Q192 82 196 66 Q200 52 198 38" class="br" stroke-width="7"/>
+        <path d="M198 38 Q200 26 198 16" class="br" stroke-width="4"/>
+        <path d="M198 38 Q208 30 214 22" class="br" stroke-width="3.5"/>
+        <path d="M38 38 Q34 30 36 22" class="br-light" stroke-width="2"/>
+        <path d="M16 60 Q10 52 8 44" class="br-light" stroke-width="2"/>
+        <path d="M80 54 Q74 46 72 38" class="br-light" stroke-width="2"/>
+        <path d="M108 34 Q106 24 108 16" class="br-light" stroke-width="1.8"/>
+        <path d="M170 14 Q168 8 172 4" class="br-light" stroke-width="1.5"/>
+        <path d="M198 16 Q200 8 198 2" class="br-light" stroke-width="1.5"/>
+        <path d="M214 22 Q218 14 216 8" class="br-light" stroke-width="1.5"/>
+        <path d="M154 18 Q150 10 152 4" class="br-light" stroke-width="1.5"/>
+        <path d="M280 28 Q278 18 282 12" class="br-light" stroke-width="1.8"/>
+        <path d="M318 58 Q322 48 320 40" class="br-light" stroke-width="1.8"/>
+        <path d="M332 32 Q336 22 334 14" class="br-light" stroke-width="1.5"/>
+        <path d="M238 34 Q236 24 238 16" class="br-light" stroke-width="1.8"/>
+        <path d="M36 72 Q30 62 28 52" class="br-light" stroke-width="2"/>
+        <ellipse cx="14" cy="136" rx="22" ry="14" class="leaf" opacity="0.9"/>
+        <ellipse cx="8" cy="128" rx="16" ry="10" class="leaf-mid"/>
+        <ellipse cx="20" cy="122" rx="14" ry="9" class="leaf-hi"/>
+        <ellipse cx="34" cy="34" rx="18" ry="12" class="leaf"/>
+        <ellipse cx="28" cy="26" rx="13" ry="8" class="leaf-mid"/>
+        <ellipse cx="38" cy="20" rx="11" ry="8" class="leaf-hi"/>
+        <ellipse cx="12" cy="52" rx="16" ry="10" class="leaf"/>
+        <ellipse cx="8" cy="44" rx="11" ry="8" class="leaf-mid"/>
+        <ellipse cx="78" cy="46" rx="16" ry="11" class="leaf"/>
+        <ellipse cx="72" cy="38" rx="12" ry="8" class="leaf-mid"/>
+        <ellipse cx="106" cy="26" rx="18" ry="12" class="leaf"/>
+        <ellipse cx="112" cy="18" rx="14" ry="9" class="leaf-mid"/>
+        <ellipse cx="104" cy="14" rx="10" ry="7" class="leaf-hi"/>
+        <ellipse cx="32" cy="62" rx="12" ry="8" class="leaf-mid" opacity="0.8"/>
+        <ellipse cx="168" cy="10" rx="18" ry="12" class="leaf"/>
+        <ellipse cx="162" cy="4" rx="12" ry="8" class="leaf-mid"/>
+        <ellipse cx="174" cy="2" rx="10" ry="7" class="leaf-hi"/>
+        <ellipse cx="198" cy="8" rx="17" ry="11" class="leaf"/>
+        <ellipse cx="204" cy="2" rx="12" ry="8" class="leaf-mid"/>
+        <ellipse cx="194" cy="4" rx="10" ry="7" class="leaf-hi"/>
+        <ellipse cx="154" cy="14" rx="12" ry="8" class="leaf-mid"/>
+        <ellipse cx="216" cy="16" rx="12" ry="8" class="leaf-mid"/>
+        <ellipse cx="330" cy="26" rx="18" ry="12" class="leaf"/>
+        <ellipse cx="336" cy="18" rx="13" ry="8" class="leaf-mid"/>
+        <ellipse cx="326" cy="16" rx="10" ry="7" class="leaf-hi"/>
+        <ellipse cx="318" cy="52" rx="15" ry="10" class="leaf"/>
+        <ellipse cx="322" cy="44" rx="11" ry="8" class="leaf-mid"/>
+        <ellipse cx="280" cy="22" rx="16" ry="11" class="leaf"/>
+        <ellipse cx="276" cy="14" rx="11" ry="8" class="leaf-mid"/>
+        <ellipse cx="238" cy="28" rx="15" ry="10" class="leaf"/>
+        <ellipse cx="234" cy="20" rx="11" ry="7" class="leaf-mid"/>
+        <ellipse cx="96" cy="96" rx="14" ry="9" class="leaf" opacity="0.7"/>
+        <ellipse cx="244" cy="104" rx="13" ry="8" class="leaf" opacity="0.7"/>
+        <ellipse cx="170" cy="58" rx="12" ry="8" class="leaf-mid" opacity="0.7"/>
+        <ellipse cx="196" cy="52" rx="11" ry="7" class="leaf-mid" opacity="0.7"/>
+        <ellipse cx="50" cy="116" rx="18" ry="11" class="leaf" opacity="0.85"/>
+        <ellipse cx="44" cy="108" rx="13" ry="8" class="leaf-mid"/>
+        <ellipse cx="82" cy="122" rx="16" ry="10" class="leaf" opacity="0.85"/>
+        <ellipse cx="76" cy="114" rx="12" ry="8" class="leaf-mid"/>
+        <ellipse cx="26" cy="128" rx="14" ry="9" class="leaf" opacity="0.8"/>
+        <ellipse cx="24" cy="68" rx="13" ry="8" class="leaf" opacity="0.8"/>
+        <ellipse cx="54" cy="82" rx="14" ry="9" class="leaf-mid" opacity="0.8"/>
+        <ellipse cx="46" cy="50" rx="13" ry="8" class="leaf" opacity="0.8"/>
+        <ellipse cx="182" cy="34" rx="16" ry="10" class="leaf-mid" opacity="0.85"/>
+        <ellipse cx="186" cy="24" rx="12" ry="8" class="leaf-hi" opacity="0.8"/>
+        <ellipse cx="144" cy="28" rx="13" ry="8" class="leaf" opacity="0.75"/>
+        <ellipse cx="226" cy="26" rx="13" ry="8" class="leaf" opacity="0.75"/>
+        <ellipse cx="260" cy="90" rx="16" ry="10" class="leaf" opacity="0.8"/>
+        <ellipse cx="256" cy="80" rx="12" ry="8" class="leaf-mid" opacity="0.8"/>
+        <ellipse cx="302" cy="76" rx="15" ry="9" class="leaf" opacity="0.8"/>
+        <ellipse cx="298" cy="66" rx="11" ry="7" class="leaf-mid" opacity="0.8"/>
+        <ellipse cx="340" cy="40" rx="13" ry="8" class="leaf" opacity="0.8"/>
+        <ellipse cx="258" cy="46" rx="13" ry="8" class="leaf-mid" opacity="0.8"/>
+        <ellipse cx="130" cy="108" rx="18" ry="12" class="leaf" opacity="0.7"/>
+        <ellipse cx="126" cy="98" rx="13" ry="8" class="leaf-mid" opacity="0.7"/>
+        <ellipse cx="220" cy="102" rx="16" ry="10" class="leaf" opacity="0.7"/>
+        <ellipse cx="216" cy="92" rx="12" ry="8" class="leaf-mid" opacity="0.7"/>
+        <ellipse cx="176" cy="82" rx="14" ry="9" class="leaf-mid" opacity="0.65"/>
+        <ellipse cx="200" cy="78" rx="13" ry="8" class="leaf-mid" opacity="0.65"/>
+      </svg>
+      <h1>SJCC SCORING</h1>
+    </div>
     <div class="section-label">Select Game</div>
     <div class="game-card" id="home-wolf"><div class="game-card-icon">🐺</div><div class="game-card-text"><h3>Wolf</h3><p>Hole-by-hole team gambling game</p></div></div>
     <div class="game-card" id="home-ns"><div class="game-card-icon">⛳</div><div class="game-card-text"><h3>Nassau + Skins</h3><p>Scorecard-based betting games</p></div></div>
