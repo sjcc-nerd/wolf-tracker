@@ -177,6 +177,10 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .adj-btn:hover { border-color: var(--gold); }
 .bet-dinput { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--gold-bright); background: none; border: none; border-bottom: 1px solid var(--gold); width: 52px; text-align: center; outline: none; -moz-appearance: textfield; }
 .bet-dinput::-webkit-outer-spin-button, .bet-dinput::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; color: var(--gold-bright); font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; padding: 10px 20px; z-index: 200; white-space: nowrap; animation: toast-in 0.2s ease; pointer-events: none; }
+@keyframes toast-in { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 </style>
 </head>
 <body>
@@ -188,24 +192,24 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 const SJCC = {
   name: 'San Jose Country Club',
   holes: [
-    {num:1,  par:4, hcp:10, yds:295},
-    {num:2,  par:4, hcp:8,  yds:313},
-    {num:3,  par:3, hcp:12, yds:171},
-    {num:4,  par:5, hcp:6,  yds:446},
-    {num:5,  par:3, hcp:16, yds:145},
-    {num:6,  par:4, hcp:2,  yds:386},
-    {num:7,  par:3, hcp:18, yds:156},
-    {num:8,  par:5, hcp:14, yds:435},
-    {num:9,  par:4, hcp:4,  yds:360},
-    {num:10, par:3, hcp:15, yds:209},
-    {num:11, par:5, hcp:11, yds:474},
-    {num:12, par:5, hcp:13, yds:445},
-    {num:13, par:4, hcp:7,  yds:411},
-    {num:14, par:3, hcp:17, yds:169},
-    {num:15, par:4, hcp:9,  yds:368},
-    {num:16, par:5, hcp:5,  yds:534},
-    {num:17, par:5, hcp:1,  yds:514},
-    {num:18, par:4, hcp:3,  yds:363},
+    {num:1,  par:4, hcp:14, yds:295},
+    {num:2,  par:4, hcp:10, yds:313},
+    {num:3,  par:3, hcp:8,  yds:171},
+    {num:4,  par:4, hcp:2,  yds:446},
+    {num:5,  par:3, hcp:18, yds:145},
+    {num:6,  par:4, hcp:6,  yds:386},
+    {num:7,  par:3, hcp:16, yds:156},
+    {num:8,  par:4, hcp:4,  yds:435},
+    {num:9,  par:4, hcp:12, yds:360},
+    {num:10, par:3, hcp:9,  yds:209},
+    {num:11, par:5, hcp:17, yds:474},
+    {num:12, par:4, hcp:1,  yds:445},
+    {num:13, par:4, hcp:5,  yds:411},
+    {num:14, par:3, hcp:15, yds:169},
+    {num:15, par:4, hcp:13, yds:368},
+    {num:16, par:5, hcp:3,  yds:534},
+    {num:17, par:5, hcp:11, yds:514},
+    {num:18, par:4, hcp:7,  yds:363},
   ]
 };
 
@@ -252,11 +256,14 @@ function computeNassauState(ns) {
   // ns = nassau setup object, state.ns
   // Returns match status for front, back, overall + all active presses
   const scores = state.scores || {};
+  const ng = state.nsGame || {};
+  ns.presses = ng.presses || [];
   const { teamA, teamB, format, hcpPct } = ns;
   const result = { front: null, back: null, overall: null, presses: [] };
 
   function bestBallHole(team, holeIdx) {
     const hole = SJCC.holes[holeIdx];
+    // Only count hole if ALL team members have scores entered
     const grosses = team.map(p => scores[p] && scores[p][holeIdx] != null ? scores[p][holeIdx] : null);
     if (grosses.some(g => g === null)) return null;
     if (format === 'match') {
@@ -266,8 +273,11 @@ function computeNassauState(ns) {
       });
       return Math.min(...nets);
     } else {
-      // stroke play — use net totals (handled separately)
-      return Math.min(...grosses);
+      const nets = team.map((p, i) => {
+        const pObj = state.players.find(pl => pl.name === p);
+        return netScore(grosses[i], pObj ? pObj.hcp : 0, hole.hcp, hcpPct);
+      });
+      return Math.min(...nets);
     }
   }
 
@@ -418,14 +428,22 @@ function skinsTotals(skinsState, skinBet, players) {
 // ═══════════════════════════════════════════
 function render() {
   const app = document.getElementById('app');
+  // Save scroll position of any scrollable element
+  const scrollEl = document.querySelector('.screen') || document.querySelector('.tab-content');
+  const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+
   const s = state.screen;
-  if (s === 'home')         app.innerHTML = renderHome();
+  if (s === 'home')            app.innerHTML = renderHome();
   else if (s === 'wolf-setup') app.innerHTML = renderWolfSetup();
   else if (s === 'wolf-game')  app.innerHTML = renderWolfGame();
   else if (s === 'ns-setup')   app.innerHTML = renderNSSetup();
   else if (s === 'ns-game')    app.innerHTML = renderNSGame();
   attachEvents();
   saveState();
+
+  // Restore scroll position
+  const newScrollEl = document.querySelector('.screen') || document.querySelector('.tab-content');
+  if (newScrollEl && scrollTop) newScrollEl.scrollTop = scrollTop;
 }
 
 // ═══════════════════════════════════════════
@@ -775,7 +793,7 @@ function renderNSScorecard() {
   const players = state.players;
 
   const scoreRows = players.map(p => {
-    const gross = (ng.scores[p.name] || {})[hi];
+    const gross = (state.scores[p.name] || {})[hi];
     const strokes = strokesOnHole(p.hcp, hole.hcp, ns.hcpPct);
     const hasScore = gross != null;
     const net = hasScore ? gross - strokes : null;
@@ -806,9 +824,19 @@ function renderNSScorecard() {
     const match = seg === 'front' ? nr.front : nr.back;
     const aNames = ns.teamA.join('/');
     const bNames = ns.teamB.join('/');
+    const thru = match.holesPlayed;
+    const matchStatusColor = match.diff===0?'var(--muted)':match.diff>0?'var(--blue-text)':'var(--purple-text)';
+    const matchStatusText = thru === 0 ? 'No scores yet' : match.status;
+    const aLabel = ns.teamA.join('/');
+    const bLabel = ns.teamB.join('/');
     nassauSnip = `<div class="hole-result-box" style="margin-bottom:10px">
-      <div class="hole-result-row"><span class="label">${seg === 'front' ? 'Front' : 'Back'} match</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:${match.diff===0?'var(--muted)':match.diff>0?'var(--blue-text)':'var(--purple-text)'}">${match.status}</span>
+      <div class="hole-result-row"><span class="label">${seg === 'front' ? 'Front' : 'Back'} · Thru ${thru}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:${matchStatusColor}">${matchStatusText}</span>
+      </div>
+      <div class="hole-result-row" style="font-size:0.7rem">
+        <span style="color:var(--blue-text)">${aLabel}</span>
+        <span style="color:var(--muted)">vs</span>
+        <span style="color:var(--purple-text)">${bLabel}</span>
       </div>
       ${ns.autoPress ? `<div class="hole-result-row"><span class="label">Auto press</span><span style="color:var(--muted);font-size:0.72rem">triggers at 2-down</span></div>` : ''}
       <div style="margin-top:6px"><button class="press-btn" id="ns-manual-press">+ Manual Press</button></div>
@@ -969,7 +997,7 @@ function renderNSSummary() {
     </div>`;
   }).join('');
 
-  const holesPlayed = Object.values(state.nsGame.scores[state.players[0]?.name] || {}).filter(v=>v!=null).length;
+  const holesPlayed = Object.values(state.scores[state.players[0]?.name] || {}).filter(v=>v!=null).length;
 
   return `<div>
     <div class="stat-strip">
@@ -987,6 +1015,16 @@ function renderNSSummary() {
 // UTILITIES
 // ═══════════════════════════════════════════
 function fmt(n) { return n % 1 === 0 ? n : n.toFixed(2); }
+
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 2500);
+}
 
 // ═══════════════════════════════════════════
 // EVENTS
@@ -1160,10 +1198,10 @@ function attachNSSetupEvents() {
     ns.players.forEach(p => { scores[p.name] = {}; });
 
     state.players = ns.players;
+    state.scores = scores;
     state.nsGame = {
       tab: 'scorecard',
       currentHole: 0,
-      scores,
       presses: [],
     };
     state.nsSaved = true;
@@ -1188,9 +1226,9 @@ function attachNSGameEvents() {
     btn.addEventListener('click', e => {
       const p = e.target.dataset.scUp;
       const hi = ng.currentHole;
-      if (!ng.scores[p]) ng.scores[p] = {};
+      if (!state.scores[p]) state.scores[p] = {};
       const par = SJCC.holes[hi].par;
-      ng.scores[p][hi] = (ng.scores[p][hi] != null ? ng.scores[p][hi] : par - 1) + 1;
+      state.scores[p][hi] = (state.scores[p][hi] != null ? state.scores[p][hi] : par - 1) + 1;
       checkAutoPress(hi);
       render();
     });
@@ -1199,23 +1237,27 @@ function attachNSGameEvents() {
     btn.addEventListener('click', e => {
       const p = e.target.dataset.scDown;
       const hi = ng.currentHole;
-      if (!ng.scores[p]) ng.scores[p] = {};
+      if (!state.scores[p]) state.scores[p] = {};
       const par = SJCC.holes[hi].par;
-      const cur = ng.scores[p][hi] != null ? ng.scores[p][hi] : par + 1;
-      ng.scores[p][hi] = Math.max(1, cur - 1);
+      const cur = state.scores[p][hi] != null ? state.scores[p][hi] : par + 1;
+      state.scores[p][hi] = Math.max(1, cur - 1);
       checkAutoPress(hi);
       render();
     });
   });
 
   // Manual press
-  document.getElementById('ns-manual-press')?.addEventListener('click', () => {
-    const hi = ng.currentHole;
-    const seg = hi < 9 ? 'front' : 'back';
-    ng.presses = ng.presses || [];
-    ng.presses.push({ startHole: hi, segment: seg, bet: seg==='front'?ns.betFront:ns.betBack, manual:true });
-    ns.presses = ng.presses;
-    render();
+  document.querySelectorAll('#ns-manual-press').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const hi = ng.currentHole;
+      const seg = hi < 9 ? 'front' : 'back';
+      ng.presses = ng.presses || [];
+      const pressNum = ng.presses.filter(p => p.manual).length + 1;
+      ng.presses.push({ startHole: hi, segment: seg, bet: seg==='front'?ns.betFront:ns.betBack, manual:true });
+      ns.presses = ng.presses;
+      showToast(`Press #${pressNum} logged — starting hole ${hi + 1}`);
+      render();
+    });
   });
 
   document.getElementById('ns-new-round')?.addEventListener('click', () => { state.screen='ns-setup'; state.nsSaved=false; render(); });
