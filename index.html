@@ -245,6 +245,7 @@ if (!state.scores) state.scores = {};
 if (!state.players) state.players = [];
 if (!state.ptSaved) state.ptSaved = false;
 if (!state.ssSaved) state.ssSaved = false;
+if (!state.jksSaved) state.jksSaved = false;
 
 // Inject transition overlay once
 (function() {
@@ -539,6 +540,8 @@ function render(skipTransition) {
     else if (s === '9pt-game')   app.innerHTML = render9ptGame();
     else if (s === 'ss-setup')   app.innerHTML = renderSSSetup();
     else if (s === 'ss-game')    app.innerHTML = renderSSGame();
+    else if (s === 'jks-setup')  app.innerHTML = renderJKSSetup();
+    else if (s === 'jks-game')   app.innerHTML = renderJKSGame();
     attachEvents();
     saveState();
     const newScrollEl = document.querySelector('.screen') || document.querySelector('.tab-content');
@@ -702,10 +705,12 @@ function renderHome() {
     <div class="game-card" id="home-ns"><div class="game-card-icon">⛳</div><div class="game-card-text"><h3>Nassau + Skins</h3><p>Scorecard-based betting games</p></div></div>
     <div class="game-card" id="home-9pt"><div class="game-card-icon">🎯</div><div class="game-card-text"><h3>9 Point Game</h3><p>3-player (9pt) or 4-player (16pt) points game</p></div></div>
     <div class="game-card" id="home-ss"><div class="game-card-icon">💰</div><div class="game-card-text"><h3>Skins Only</h3><p>Standalone skins — per hole or total pot</p></div></div>
+    <div class="game-card" id="home-jks"><div class="game-card-icon">📋</div><div class="game-card-text"><h3>Just Keep Score</h3><p>Track gross &amp; net scores, no betting</p></div></div>
     ${state.wolfSaved ? `<button class="big-btn ghost" id="resume-wolf">Resume Wolf Round</button>` : ''}
     ${state.nsSaved   ? `<button class="big-btn ghost" id="resume-ns">Resume Nassau/Skins Round</button>` : ''}
     ${state.ptSaved   ? `<button class="big-btn ghost" id="resume-9pt">Resume 9 Point Round</button>` : ''}
     ${state.ssSaved   ? `<button class="big-btn ghost" id="resume-ss">Resume Skins Only Round</button>` : ''}
+    ${state.jksSaved  ? `<button class="big-btn ghost" id="resume-jks">Resume Scorecard</button>` : ''}
   </div>`;
 }
 
@@ -1379,6 +1384,8 @@ function attachEvents() {
   if (s === '9pt-game')   attach9ptGameEvents();
   if (s === 'ss-setup')   attachSSSetupEvents();
   if (s === 'ss-game')    attachSSGameEvents();
+  if (s === 'jks-setup')  attachJKSSetupEvents();
+  if (s === 'jks-game')   attachJKSGameEvents();
 }
 
 function attachHomeEvents() {
@@ -1386,10 +1393,12 @@ function attachHomeEvents() {
   document.getElementById('home-ns')?.addEventListener('click',   () => { state.screen = 'ns-setup';   render(); });
   document.getElementById('home-9pt')?.addEventListener('click',  () => { state.screen = '9pt-setup';  render(); });
   document.getElementById('home-ss')?.addEventListener('click',    () => { state.screen = 'ss-setup';   render(); });
+  document.getElementById('home-jks')?.addEventListener('click',   () => { state.screen = 'jks-setup';  render(); });
   document.getElementById('resume-wolf')?.addEventListener('click', () => { state.screen = 'wolf-game'; render(); });
   document.getElementById('resume-ns')?.addEventListener('click',   () => { state.screen = 'ns-game';   render(); });
   document.getElementById('resume-9pt')?.addEventListener('click',  () => { state.screen = '9pt-game';  render(); });
   document.getElementById('resume-ss')?.addEventListener('click',   () => { state.screen = 'ss-game';   render(); });
+  document.getElementById('resume-jks')?.addEventListener('click',  () => { state.screen = 'jks-game';  render(); });
 }
 
 function attachWolfSetupEvents() {
@@ -2725,6 +2734,339 @@ function attachSSGameEvents() {
 
   document.getElementById('ss-new-round')?.addEventListener('click', () => { state.screen='ss-setup'; state.ssSaved=false; render(); });
   document.getElementById('ss-back-to-game')?.addEventListener('click', () => { sg.tab='scorecard'; render(); });
+}
+
+// ═══════════════════════════════════════════
+// JUST KEEP SCORE
+// ═══════════════════════════════════════════
+
+function renderJKSSetup() {
+  const jks = state.jksSetup || {
+    players: [{name:'',hcp:0},{name:'',hcp:0},{name:'',hcp:0},{name:'',hcp:0}],
+    hcpPct: 100
+  };
+  state.jksSetup = jks;
+
+  const playerRows = jks.players.map((p, i) => {
+    const canRemove = i >= 2 && jks.players.length > 2;
+    return '<div class="player-setup-row">'
+      + '<span class="player-idx">'+(i+1)+'</span>'
+      + '<input class="text-input jks-pname" data-idx="'+i+'" placeholder="Player '+(i+1)+'" value="'+p.name+'" autocomplete="off"/>'
+      + '<input class="num-input jks-hcp" data-idx="'+i+'" placeholder="Hcp" value="'+p.hcp+'" type="number" min="0" max="54"/>'
+      + (canRemove ? '<button class="remove-btn" data-jks-remove="'+i+'">✕</button>' : '')
+      + '</div>';
+  }).join('');
+
+  return '<div class="top-bar"><span class="top-bar-title">📋 JUST KEEP SCORE</span><button class="back-btn" id="go-home">Home</button></div>'
+    + '<div class="screen">'
+    + '<div class="section-label">Players & Handicaps</div>'
+    + '<div class="card">'+playerRows
+    + (jks.players.length < 5 ? '<button class="add-btn" id="jks-add-player">+ Add Player ('+jks.players.length+'/5)</button>' : '')
+    + '</div>'
+    + '<div class="section-label">Handicap %</div>'
+    + '<div class="card"><div class="field-row"><span class="field-label">% of handicap used</span>'
+    + '<input class="num-input" id="jks-hcp-pct" value="'+jks.hcpPct+'" min="0" max="100" type="number"/>'
+    + '</div></div>'
+    + '<button class="big-btn green" id="jks-start">Start Round →</button>'
+    + '</div>';
+}
+
+function renderJKSGame() {
+  const tab = state.jksGame.tab || 'scorecard';
+  return '<div class="top-bar"><span class="top-bar-title">📋 SCORECARD</span>'
+    + '<div style="display:flex;gap:6px">'
+    + '<button class="back-btn" id="jks-end-round" style="color:var(--red-text);border-color:var(--red)">End</button>'
+    + '<button class="back-btn" id="go-home">Home</button>'
+    + '</div></div>'
+    + '<div class="tabs">'
+    + '<button class="tab '+(tab==='scorecard'?'active':'')+'" data-jks-tab="scorecard">Scorecard</button>'
+    + '<button class="tab '+(tab==='leaderboard'?'active':'')+'" data-jks-tab="leaderboard">Leaderboard</button>'
+    + '<button class="tab '+(tab==='summary'?'active':'')+'" data-jks-tab="summary">Summary</button>'
+    + '</div>'
+    + '<div class="tab-content">'
+    + (tab==='scorecard'   ? renderJKSScorecard()   : '')
+    + (tab==='leaderboard' ? renderJKSLeaderboard() : '')
+    + (tab==='summary'     ? renderJKSSummary()     : '')
+    + '</div>';
+}
+
+function renderJKSScorecard() {
+  const jg = state.jksGame;
+  const jks = state.jksSetup;
+  const hi = jg.currentHole;
+  const hole = SJCC.holes[hi];
+
+  const scoreRows = jks.players.map(p => {
+    const gross = (jg.scores[p.name] || {})[hi];
+    const strokes = strokesOnHole(p.hcp, hole.hcp, jks.hcpPct);
+    const hasScore = gross != null;
+    const net = hasScore ? gross - strokes : null;
+    const slabel = hasScore ? scoreLabel(gross, hole.par) : '';
+    const diff = hasScore ? gross - hole.par : null;
+    const diffStr = diff === null ? '' : (diff > 0 ? '+'+diff : diff === 0 ? 'E' : ''+diff);
+    const diffColor = diff === null ? '' : diff < 0 ? 'var(--gold-bright)' : diff === 0 ? 'var(--white)' : diff > 0 ? '#ff9944' : 'var(--red-text)';
+
+    return '<div class="score-row">'
+      + '<div style="flex:1">'
+      + '<div class="score-player-name">'+p.name+'</div>'
+      + '<div style="display:flex;gap:6px;align-items:center;margin-top:2px">'
+      + '<span class="score-player-hcp">Hcp '+p.hcp+'</span>'
+      + (strokes > 0 ? '<span class="score-stroke-badge">+'+strokes+' stroke'+(strokes>1?'s':'')+'</span>' : '')
+      + (diff !== null ? '<span style="font-family:IBM Plex Mono,monospace;font-size:0.7rem;color:'+diffColor+'">'+diffStr+'</span>' : '')
+      + '</div></div>'
+      + '<div class="score-adj">'
+      + '<button class="sc-btn" data-jks-down="'+p.name+'">−</button>'
+      + '<div class="sc-val '+slabel+'">'+(hasScore ? gross : '–')+'</div>'
+      + '<button class="sc-btn" data-jks-up="'+p.name+'">+</button>'
+      + '</div>'
+      + '<div class="sc-net">'+(net != null ? 'net '+net : '')+'</div>'
+      + '</div>';
+  }).join('');
+
+  return '<div>'
+    + '<div class="hole-nav">'
+    + '<div><div class="hole-nav-title">Hole '+hole.num+'</div><div class="hole-nav-sub">'+SJCC.name+'</div></div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button class="back-btn" id="jks-prev" '+(hi>0?'':'disabled')+'>← Prev</button>'
+    + '<button class="back-btn" id="jks-next" '+(hi<17?'':'disabled')+'>Next →</button>'
+    + '</div></div>'
+    + '<div class="hole-meta">'
+    + '<div class="hole-meta-item">Par <span>'+hole.par+'</span></div>'
+    + '<div class="hole-meta-item">Yds <span>'+hole.yds+'</span></div>'
+    + '<div class="hole-meta-item">Hcp <span>'+hole.hcp+'</span></div>'
+    + '</div>'
+    + '<div class="score-entry">'+scoreRows+'</div>'
+    + (hi < 17
+      ? '<button class="big-btn gold" id="jks-confirm-hole">Confirm Hole '+hole.num+' →</button>'
+      : '<button class="big-btn green" id="jks-finish-round">Finish Round ✓</button>')
+    + '</div>';
+}
+
+function renderJKSLeaderboard() {
+  const jg = state.jksGame;
+  const jks = state.jksSetup;
+  const scores = jg.scores || {};
+  const holesPlayed = jg.confirmedHoles || 0;
+
+  if (holesPlayed === 0) return '<div style="text-align:center;color:var(--muted);padding:40px 0">Complete a hole to see standings</div>';
+
+  // Compute totals
+  const totals = jks.players.map(p => {
+    let gross = 0, net = 0, parTotal = 0;
+    for (let hi = 0; hi < holesPlayed; hi++) {
+      const hole = SJCC.holes[hi];
+      const g = (scores[p.name] || {})[hi];
+      if (g != null) {
+        const strokes = strokesOnHole(p.hcp, hole.hcp, jks.hcpPct);
+        gross += g;
+        net += g - strokes;
+        parTotal += hole.par;
+      }
+    }
+    return { name: p.name, gross, net, parTotal, grossDiff: gross - parTotal, netDiff: net - parTotal };
+  });
+
+  // Sort by net score (lowest first = best)
+  const sorted = [...totals].sort((a,b) => a.net - b.net);
+  const parPlayed = SJCC.holes.slice(0, holesPlayed).reduce((s,h) => s+h.par, 0);
+
+  const rows = sorted.map((p, i) => {
+    const netDiff = p.net - parPlayed;
+    const grossDiff = p.gross - parPlayed;
+    const netStr = netDiff === 0 ? 'E' : (netDiff > 0 ? '+'+netDiff : ''+netDiff);
+    const grossStr = grossDiff === 0 ? 'E' : (grossDiff > 0 ? '+'+grossDiff : ''+grossDiff);
+    const netColor = netDiff < 0 ? 'var(--gold-bright)' : netDiff === 0 ? 'var(--white)' : 'var(--red-text)';
+    return '<div class="lb-row '+(i===0?'leader':'')+'">'
+      + '<span class="lb-rank '+(i===0?'gold':'')+'">'+(i===0?'★':i+1)+'</span>'
+      + '<span class="lb-name">'+p.name+'</span>'
+      + '<div style="text-align:right">'
+      + '<div style="font-family:Bebas Neue,sans-serif;font-size:1.3rem;color:'+netColor+'">'+netStr+'</div>'
+      + '<div style="font-family:IBM Plex Mono,monospace;font-size:0.65rem;color:var(--muted)">net '+p.net+' · gross '+grossStr+'</div>'
+      + '</div></div>';
+  }).join('');
+
+  return '<div>'
+    + '<div class="stat-strip">'
+    + '<div class="stat-item"><div class="stat-val">'+holesPlayed+'</div><div class="stat-lbl">Holes</div></div>'
+    + '<div class="stat-item"><div class="stat-val">'+parPlayed+'</div><div class="stat-lbl">Par</div></div>'
+    + '<div class="stat-item"><div class="stat-val">'+jks.players.length+'</div><div class="stat-lbl">Players</div></div>'
+    + '</div>'
+    + rows + '</div>';
+}
+
+function renderJKSSummary() {
+  const jg = state.jksGame;
+  const jks = state.jksSetup;
+  const scores = jg.scores || {};
+  const holesPlayed = jg.confirmedHoles || 18;
+  const parPlayed = SJCC.holes.slice(0, holesPlayed).reduce((s,h) => s+h.par, 0);
+
+  // Totals per player
+  const totals = jks.players.map(p => {
+    let gross = 0, net = 0;
+    for (let hi = 0; hi < holesPlayed; hi++) {
+      const hole = SJCC.holes[hi];
+      const g = (scores[p.name] || {})[hi];
+      if (g != null) {
+        gross += g;
+        net += g - strokesOnHole(p.hcp, hole.hcp, jks.hcpPct);
+      }
+    }
+    return { name: p.name, gross, net, hcp: p.hcp };
+  }).sort((a,b) => a.net - b.net);
+
+  const standingsRows = totals.map((p, i) => {
+    const netDiff = p.net - parPlayed;
+    const grossDiff = p.gross - parPlayed;
+    const netStr = netDiff === 0 ? 'E' : (netDiff > 0 ? '+'+netDiff : ''+netDiff);
+    const grossStr = grossDiff === 0 ? 'E' : (grossDiff > 0 ? '+'+grossDiff : ''+grossDiff);
+    const netColor = netDiff < 0 ? 'var(--gold-bright)' : netDiff === 0 ? 'var(--white)' : 'var(--red-text)';
+    return '<div class="lb-row">'
+      + '<span class="lb-rank '+(i===0?'gold':'')+'">'+(i===0?'★':i+1)+'</span>'
+      + '<div style="flex:1;margin-left:8px">'
+      + '<div class="lb-name">'+p.name+'</div>'
+      + '<div style="font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:var(--muted)">Hcp '+p.hcp+' · Gross '+p.gross+' ('+grossStr+')</div>'
+      + '</div>'
+      + '<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:'+netColor+'">'+netStr+'</div>'
+      + '</div>';
+  }).join('');
+
+  // Scorecard table — gross with net in parens on stroke holes
+  const holeHeaders = SJCC.holes.slice(0, holesPlayed).map(h =>
+    '<th style="font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:var(--muted);padding:3px 4px;text-align:center;font-weight:400">'+h.num+'</th>'
+  ).join('');
+
+  const parRow = '<tr><td style="font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:var(--muted);padding:2px 6px">Par</td>'
+    + SJCC.holes.slice(0,holesPlayed).map(h=>'<td style="font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:var(--muted);padding:2px 4px;text-align:center">'+h.par+'</td>').join('')
+    + '<td style="font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:var(--muted);padding:2px 6px;text-align:center;border-left:1px solid var(--border)">'+parPlayed+'</td>'
+    + '<td style="font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:var(--muted);padding:2px 6px;text-align:center">–</td>'
+    + '</tr>';
+
+  const scorecardRows = jks.players.map(p => {
+    let grossTotal = 0, netTotal = 0;
+    const cells = SJCC.holes.slice(0, holesPlayed).map((hole, hi) => {
+      const g = (scores[p.name] || {})[hi];
+      if (g == null) return '<td style="color:var(--muted);font-size:0.65rem;padding:3px 4px;text-align:center">–</td>';
+      const strokes = strokesOnHole(p.hcp, hole.hcp, jks.hcpPct);
+      const net = g - strokes;
+      grossTotal += g;
+      netTotal += net;
+      const diff = g - hole.par;
+      const color = diff <= -2 ? '#f0e68c' : diff === -1 ? 'var(--gold-bright)' : diff === 0 ? 'var(--white)' : diff === 1 ? '#ff9944' : 'var(--red-text)';
+      return '<td style="color:'+color+';font-family:IBM Plex Mono,monospace;font-size:0.65rem;padding:3px 4px;text-align:center">'
+        + g + (strokes > 0 ? '*' : '') + '</td>';
+    }).join('');
+
+    const totalDiff = grossTotal - parPlayed;
+    const netDiff = netTotal - parPlayed;
+    const totalStr = totalDiff === 0 ? 'E' : (totalDiff > 0 ? '+'+totalDiff : ''+totalDiff);
+    const netStr = netDiff === 0 ? 'E' : (netDiff > 0 ? '+'+netDiff : ''+netDiff);
+    const netColor = netDiff < 0 ? 'var(--gold-bright)' : netDiff === 0 ? 'var(--white)' : '#ff9944';
+
+    return '<tr>'
+      + '<td style="font-weight:600;font-size:0.75rem;padding:5px 6px;white-space:nowrap">'+p.name+'</td>'
+      + cells
+      + '<td style="font-family:IBM Plex Mono,monospace;font-size:0.7rem;padding:3px 6px;text-align:center;border-left:1px solid var(--border);color:var(--white)">'+grossTotal+'<br><span style="color:var(--muted);font-size:0.6rem">'+totalStr+'</span></td>'
+      + '<td style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;padding:3px 6px;text-align:center;color:'+netColor+'">'+netStr+'</td>'
+      + '</tr>';
+  }).join('');
+
+  return '<div>'
+    + '<div class="stat-strip">'
+    + '<div class="stat-item"><div class="stat-val">'+holesPlayed+'</div><div class="stat-lbl">Holes</div></div>'
+    + '<div class="stat-item"><div class="stat-val">'+parPlayed+'</div><div class="stat-lbl">Par</div></div>'
+    + '<div class="stat-item"><div class="stat-val">'+jks.players.length+'</div><div class="stat-lbl">Players</div></div>'
+    + '</div>'
+    + '<div class="lb-card" style="margin-bottom:12px"><div class="lb-card-header">Final Standings — Net Score</div>'+standingsRows+'</div>'
+    + '<div class="card" style="overflow-x:auto;padding:10px">'
+    + '<div style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:6px">Full Scorecard <span style="font-size:0.68rem;font-family:IBM Plex Mono,monospace;color:var(--muted);font-weight:400">* = stroke received</span></div>'
+    + '<table style="border-collapse:collapse;width:100%">'
+    + '<thead><tr>'
+    + '<th style="font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:var(--muted);padding:3px 6px;text-align:left;font-weight:400">Player</th>'
+    + holeHeaders
+    + '<th style="font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:var(--muted);padding:3px 6px;text-align:center;border-left:1px solid var(--border);font-weight:400">Gross</th>'
+    + '<th style="font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:var(--gold);padding:3px 6px;text-align:center;font-weight:400">Net</th>'
+    + '</tr>'+parRow+'</thead>'
+    + '<tbody>'+scorecardRows+'</tbody></table></div>'
+    + '<button class="big-btn green" id="jks-new-round">New Round</button>'
+    + '<button class="big-btn ghost" id="jks-back-to-game">← Back to Round</button>'
+    + '</div>';
+}
+
+// ── JKS SETUP EVENTS ──
+function attachJKSSetupEvents() {
+  const jks = state.jksSetup;
+  document.querySelectorAll('.jks-pname').forEach(inp => {
+    inp.addEventListener('input', e => { jks.players[parseInt(e.target.dataset.idx)].name = e.target.value; });
+    inp.addEventListener('blur', () => render());
+  });
+  document.querySelectorAll('.jks-hcp').forEach(inp => {
+    inp.addEventListener('input', e => { jks.players[parseInt(e.target.dataset.idx)].hcp = parseFloat(e.target.value)||0; });
+  });
+  document.querySelector('[data-jks-remove]')?.addEventListener('click', e => {
+    jks.players.splice(parseInt(e.target.dataset.jksRemove),1); render();
+  });
+  document.getElementById('jks-add-player')?.addEventListener('click', () => { jks.players.push({name:'',hcp:0}); render(); });
+  document.getElementById('jks-hcp-pct')?.addEventListener('input', e => { jks.hcpPct = parseFloat(e.target.value)||100; });
+  document.getElementById('jks-start')?.addEventListener('click', () => {
+    jks.players = jks.players.map((p,i) => ({...p, name: p.name.trim()||'Player '+(i+1)}));
+    const scores = {};
+    jks.players.forEach(p => { scores[p.name] = {}; });
+    state.jksGame = { tab:'scorecard', currentHole:0, scores, confirmedHoles:0 };
+    state.jksSaved = true;
+    state.screen = 'jks-game';
+    render();
+  });
+}
+
+// ── JKS GAME EVENTS ──
+function attachJKSGameEvents() {
+  const jg = state.jksGame;
+  const jks = state.jksSetup;
+
+  document.querySelectorAll('[data-jks-tab]').forEach(t => {
+    t.addEventListener('click', e => { jg.tab = e.target.dataset.jksTab; render(); });
+  });
+  document.getElementById('jks-end-round')?.addEventListener('click', () => { state.jksSaved=false; state.screen='home'; render(); });
+  document.getElementById('jks-prev')?.addEventListener('click', () => { if(jg.currentHole>0){jg.currentHole--; render();} });
+  document.getElementById('jks-next')?.addEventListener('click', () => { if(jg.currentHole<17){jg.currentHole++; render();} });
+
+  document.querySelectorAll('[data-jks-up]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const p = e.target.dataset.jksUp;
+      const hi = jg.currentHole;
+      if (!jg.scores[p]) jg.scores[p] = {};
+      const par = SJCC.holes[hi].par;
+      jg.scores[p][hi] = (jg.scores[p][hi] != null ? jg.scores[p][hi] : par - 1) + 1;
+      render();
+    });
+  });
+  document.querySelectorAll('[data-jks-down]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const p = e.target.dataset.jksDown;
+      const hi = jg.currentHole;
+      if (!jg.scores[p]) jg.scores[p] = {};
+      const par = SJCC.holes[hi].par;
+      const cur = jg.scores[p][hi] != null ? jg.scores[p][hi] : par + 1;
+      jg.scores[p][hi] = Math.max(1, cur - 1);
+      render();
+    });
+  });
+
+  document.getElementById('jks-confirm-hole')?.addEventListener('click', () => {
+    jg.confirmedHoles = (jg.confirmedHoles || 0) + 1;
+    jg.currentHole++;
+    render();
+  });
+
+  document.getElementById('jks-finish-round')?.addEventListener('click', () => {
+    jg.confirmedHoles = 18;
+    jg.tab = 'summary';
+    render();
+  });
+
+  document.getElementById('jks-new-round')?.addEventListener('click', () => { state.screen='jks-setup'; state.jksSaved=false; render(); });
+  document.getElementById('jks-back-to-game')?.addEventListener('click', () => { jg.tab='scorecard'; render(); });
 }
 // ── BOOT ──
 render();
