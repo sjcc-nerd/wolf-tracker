@@ -29,13 +29,18 @@ render()
   → restores scroll position
 ```
 
-`attachEvents()` re-wires all event listeners from scratch after every render. Screen-specific listeners are split into `attachHomeEvents()`, `attachWolfSetupEvents()`, `attachWolfGameEvents()`, `attachNSSetupEvents()`, `attachNSGameEvents()`, `attach9ptSetupEvents()`, `attach9ptGameEvents()`, `attachSSSetupEvents()`, `attachSSGameEvents()`.
+`attachEvents()` re-wires all event listeners from scratch after every render. Screen-specific listeners are split into `attachHomeEvents()`, `attachWolfSetupEvents()`, `attachWolfGameEvents()`, `attachNSSetupEvents()`, `attachNSGameEvents()`, `attach9ptSetupEvents()`, `attach9ptGameEvents()`, `attachSSSetupEvents()`, `attachSSGameEvents()`, `attachJKSSetupEvents()`, `attachJKSGameEvents()`.
+
+### Screen Transitions
+
+`render()` accepts an optional `skipTransition` arg. On any *change* of `state.screen` (tracked via module-level `_prevScreen`), an `#oak-overlay` div fades in (~280ms), the new screen renders behind it, then it fades back out (~900ms hold + 300ms fade). Re-renders within the same screen skip the transition. The overlay is injected once at boot — do not re-create it. Total cost per navigation is ~1.5s of motion; tab switches within a game count as same-screen renders, so they don't trigger it.
 
 ### State Shape
 
 ```
 state.screen       — 'home' | 'wolf-setup' | 'wolf-game' | 'ns-setup' | 'ns-game'
                      | '9pt-setup' | '9pt-game' | 'ss-setup' | 'ss-game'
+                     | 'jks-setup' | 'jks-game'
 state.players      — [{ name, hcp }] — shared across Nassau + Skins
 state.scores       — { [playerName]: { [holeIndex]: grossScore } } — 0-indexed
 state.wolf         — Wolf setup: { players[], defaultBet }
@@ -46,7 +51,9 @@ state.ptSetup      — 9pt/16pt config: { players[], hcpPct, blitz, vpp }
 state.ptGame       — 9pt/16pt runtime: { tab, currentHole, scores, holes[] }
 state.ssSetup      — Skins-only config: { players[], hcpPct, skinType, betMode, skinBet, carryover, buyIn }
 state.ssGame       — Skins-only runtime: { tab, currentHole, scores, confirmedHoles }
-state.wolfSaved / state.nsSaved / state.ptSaved / state.ssSaved
+state.jksSetup     — Just Keep Score config: { players[], hcpPct }
+state.jksGame      — Just Keep Score runtime: { tab, currentHole, scores, confirmedHoles }
+state.wolfSaved / state.nsSaved / state.ptSaved / state.ssSaved / state.jksSaved
                    — booleans — show Resume buttons on home
 ```
 
@@ -141,6 +148,14 @@ Numeric inputs (scores, bets) call `render()` immediately on change.
   - `totalpot` — fixed `$buyIn` per player; total pot splits across all skins won; per-skin value floats as more skins are won, with remainder cents going to the player with most skins (player order breaks ties)
 - Carryover is only meaningful in `perhole` mode (force-disabled in `totalpot`)
 - Summary "Final Standings" column shows gross payout in `totalpot` mode, not net P&L — players who win zero skins show $0 rather than `-$buyIn`. Surface as a follow-up if it bites in real rounds
+
+## Just Keep Score
+
+- Standalone scorekeeper — no betting, no game mechanics. Tracks gross + net per player against par
+- 2–5 players with handicap %
+- Leaderboard sorts by net score (lowest = best), shows net-to-par and gross-to-par
+- Summary renders the full scorecard table (gross with `*` on stroke holes, gross + net totals, net-to-par)
+- Use this mode when somebody wants a digital scorecard but isn't playing for money
 
 ## Known Issues / Backlog
 

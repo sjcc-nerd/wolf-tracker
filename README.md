@@ -24,7 +24,8 @@ All app state lives in a single `state` object, saved to localStorage on every r
 
 ```
 state.screen          — current screen (home | wolf-setup | wolf-game | ns-setup | ns-game
-                        | 9pt-setup | 9pt-game | ss-setup | ss-game)
+                        | 9pt-setup | 9pt-game | ss-setup | ss-game
+                        | jks-setup | jks-game)
 state.players         — array of { name, hcp } — shared across Nassau/Skins
 state.scores          — { [playerName]: { [holeIndex]: grossScore } } — 0-indexed holes
 state.wolf            — Wolf setup config { players[], defaultBet }
@@ -35,10 +36,13 @@ state.ptSetup         — 9pt/16pt config { players[], hcpPct, blitz, vpp }
 state.ptGame          — 9pt/16pt runtime { tab, currentHole, scores, holes[] }
 state.ssSetup         — Skins-only config { players[], hcpPct, skinType, betMode, skinBet, carryover, buyIn }
 state.ssGame          — Skins-only runtime { tab, currentHole, scores, confirmedHoles }
+state.jksSetup        — Just Keep Score config { players[], hcpPct }
+state.jksGame         — Just Keep Score runtime { tab, currentHole, scores, confirmedHoles }
 state.wolfSaved       — boolean, shows Resume button on home screen
 state.nsSaved         — boolean, shows Resume button on home screen
 state.ptSaved         — boolean, shows Resume button for 9pt round
 state.ssSaved         — boolean, shows Resume button for Skins Only round
+state.jksSaved        — boolean, shows Resume button for Just Keep Score round
 ```
 
 ### nsSetup Object
@@ -62,9 +66,10 @@ carryover             — boolean
 
 ### Render Flow
 ```
-render()
+render(skipTransition?)
   → saves scroll position
-  → sets app.innerHTML based on state.screen
+  → if screen changed → fade oak-overlay in, swap innerHTML, fade out
+  → if same screen → swap innerHTML directly (no transition)
   → calls attachEvents()
   → calls saveState()
   → restores scroll position
@@ -75,6 +80,7 @@ render()
 - Scroll position saved/restored on every render (prevents jumping to top)
 - Toast utility `showToast(msg)` for ephemeral confirmations (auto-dismisses after 2.5s)
 - `touch-action: manipulation` on all interactive elements (prevents iOS double-tap zoom)
+- **Screen transition overlay** — `#oak-overlay` (SJCC oak tree SVG + pulsing dots) fades in/out on any screen change. Total ~1.5s of motion. Tab switches inside a game count as same-screen and skip the transition. Overlay is injected once at boot; pass `skipTransition=true` to `render()` to bypass when needed
 
 ---
 
@@ -156,6 +162,16 @@ Standalone skins game. Independent scores — does not share with Nassau/Skins.
   - **Total Pot:** fixed `buy-in` per player; whole pot splits across total skins won at end of round; per-skin value floats as more skins are won (extra cents go to the player with most skins, then to player order)
 - Live leaderboard + per-hole result log
 - Summary shows scorecard with stroke markers and a 🏆 on skin-winning holes
+
+### Just Keep Score
+Plain scorekeeper — no betting, no game mechanics, just tracking strokes.
+
+- 2–5 players with handicap %
+- Per-hole gross entry with live par-relative display (`+1`, `E`, `-2`)
+- Stroke badges on holes where a player receives strokes
+- Leaderboard sorts by **net score** (lowest first), shows both net-to-par and gross-to-par
+- Summary renders the full scorecard table with gross-with-strokes, gross/net totals, and net-to-par per player
+- Use when somebody wants a digital scorecard but isn't playing for money
 
 ---
 
