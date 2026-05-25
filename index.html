@@ -157,6 +157,16 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--white); }
 .stat-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 
+/* ── TRANSITION OVERLAY ── */
+.oak-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; pointer-events: none; opacity: 0; transition: opacity 0.28s ease; }
+.oak-overlay.visible { opacity: 1; pointer-events: all; }
+.oak-overlay-title { font-family: Bebas Neue,sans-serif; font-size: 1.1rem; letter-spacing: 0.14em; color: var(--gold-bright); }
+.oak-overlay-dots { display: flex; gap: 5px; margin-top: 4px; }
+.oak-overlay-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); opacity: 0.3; animation: oak-pulse 1.2s ease-in-out infinite; }
+.oak-overlay-dot:nth-child(2) { animation-delay: 0.2s; }
+.oak-overlay-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes oak-pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+
 /* ── WOLF (inline) ── */
 .wolf-player-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; transition: all 0.15s; user-select: none; margin-bottom: 8px; touch-action: manipulation; }
 .wolf-player-card.winner { background: var(--green-dim); border-color: var(--green-text); }
@@ -235,6 +245,68 @@ if (!state.scores) state.scores = {};
 if (!state.players) state.players = [];
 if (!state.ptSaved) state.ptSaved = false;
 if (!state.ssSaved) state.ssSaved = false;
+
+// Inject transition overlay once
+(function() {
+  const overlay = document.createElement('div');
+  overlay.id = 'oak-overlay';
+  overlay.className = 'oak-overlay';
+  overlay.innerHTML = `<svg width="200" height="160" viewBox="0 0 380 300" xmlns="http://www.w3.org/2000/svg">
+    <line x1="96" y1="172" x2="88" y2="272" fill="none" stroke="#2a1504" stroke-width="6" stroke-linecap="round"/>
+    <line x1="88" y1="272" x2="100" y2="274" fill="none" stroke="#2a1504" stroke-width="4" stroke-linecap="round"/>
+    <line x1="88" y1="272" x2="76" y2="274" fill="none" stroke="#2a1504" stroke-width="4" stroke-linecap="round"/>
+    <path d="M160 268 Q154 230 150 195 Q147 165 152 138 Q156 118 164 102 Q170 88 178 76 L186 78 Q193 91 200 106 Q208 122 212 143 Q216 170 214 200 Q212 235 205 268 Z" fill="#3d2208"/>
+    <path d="M175 265 Q172 235 170 200 Q168 172 172 145 Q175 125 182 108 Q184 125 188 148 Q192 175 190 202 Q188 232 185 265 Z" fill="#2a1504" opacity="0.45"/>
+    <path d="M158 148 Q130 138 108 132 Q80 124 58 120 Q36 116 18 122" fill="none" stroke="#3d2208" stroke-width="18" stroke-linecap="round"/>
+    <path d="M18 122 Q10 126 8 134 Q6 142 12 148" fill="none" stroke="#3d2208" stroke-width="14" stroke-linecap="round"/>
+    <path d="M68 120 Q54 108 44 96 Q36 86 32 74" fill="none" stroke="#3d2208" stroke-width="8" stroke-linecap="round"/>
+    <path d="M32 74 Q28 64 30 54 Q32 44 38 38" fill="none" stroke="#3d2208" stroke-width="5" stroke-linecap="round"/>
+    <path d="M108 130 Q100 114 96 98 Q93 85 96 72" fill="none" stroke="#3d2208" stroke-width="7" stroke-linecap="round"/>
+    <path d="M96 72 Q94 60 98 50 Q102 40 108 34" fill="none" stroke="#3d2208" stroke-width="5" stroke-linecap="round"/>
+    <path d="M200 132 Q220 118 242 108 Q264 98 286 92" fill="none" stroke="#3d2208" stroke-width="12" stroke-linecap="round"/>
+    <path d="M286 92 Q300 88 310 82 Q320 76 326 68" fill="none" stroke="#3d2208" stroke-width="8" stroke-linecap="round"/>
+    <path d="M326 68 Q332 60 334 50 Q336 40 332 32" fill="none" stroke="#3d2208" stroke-width="5" stroke-linecap="round"/>
+    <path d="M286 92 Q288 78 286 66 Q284 56 280 48" fill="none" stroke="#3d2208" stroke-width="6" stroke-linecap="round"/>
+    <path d="M242 108 Q246 92 244 78 Q242 66 238 56" fill="none" stroke="#3d2208" stroke-width="6" stroke-linecap="round"/>
+    <path d="M182 100 Q176 82 172 64 Q168 48 170 34" fill="none" stroke="#3d2208" stroke-width="8" stroke-linecap="round"/>
+    <path d="M170 34 Q168 22 170 14" fill="none" stroke="#3d2208" stroke-width="5" stroke-linecap="round"/>
+    <path d="M182 100 Q192 82 196 66 Q200 52 198 38" fill="none" stroke="#3d2208" stroke-width="7" stroke-linecap="round"/>
+    <path d="M198 38 Q200 26 198 16" fill="none" stroke="#3d2208" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="14" cy="136" rx="22" ry="14" fill="#2e6e24" opacity="0.9"/>
+    <ellipse cx="8" cy="128" rx="16" ry="10" fill="#3a8a2e"/>
+    <ellipse cx="20" cy="122" rx="14" ry="9" fill="#4aa83a"/>
+    <ellipse cx="34" cy="34" rx="18" ry="12" fill="#2e6e24"/>
+    <ellipse cx="28" cy="26" rx="13" ry="8" fill="#3a8a2e"/>
+    <ellipse cx="38" cy="20" rx="11" ry="8" fill="#4aa83a"/>
+    <ellipse cx="12" cy="52" rx="16" ry="10" fill="#2e6e24"/>
+    <ellipse cx="78" cy="46" rx="16" ry="11" fill="#2e6e24"/>
+    <ellipse cx="106" cy="26" rx="18" ry="12" fill="#2e6e24"/>
+    <ellipse cx="112" cy="18" rx="14" ry="9" fill="#3a8a2e"/>
+    <ellipse cx="168" cy="10" rx="18" ry="12" fill="#2e6e24"/>
+    <ellipse cx="174" cy="2" rx="10" ry="7" fill="#4aa83a"/>
+    <ellipse cx="198" cy="8" rx="17" ry="11" fill="#2e6e24"/>
+    <ellipse cx="330" cy="26" rx="18" ry="12" fill="#2e6e24"/>
+    <ellipse cx="318" cy="52" rx="15" ry="10" fill="#2e6e24"/>
+    <ellipse cx="280" cy="22" rx="16" ry="11" fill="#2e6e24"/>
+    <ellipse cx="238" cy="28" rx="15" ry="10" fill="#2e6e24"/>
+    <ellipse cx="50" cy="116" rx="18" ry="11" fill="#2e6e24" opacity="0.85"/>
+    <ellipse cx="82" cy="122" rx="16" ry="10" fill="#2e6e24" opacity="0.85"/>
+    <ellipse cx="26" cy="128" rx="14" ry="9" fill="#2e6e24" opacity="0.8"/>
+    <ellipse cx="182" cy="34" rx="16" ry="10" fill="#3a8a2e" opacity="0.85"/>
+    <ellipse cx="260" cy="90" rx="16" ry="10" fill="#2e6e24" opacity="0.8"/>
+    <ellipse cx="302" cy="76" rx="15" ry="9" fill="#2e6e24" opacity="0.8"/>
+    <ellipse cx="130" cy="108" rx="18" ry="12" fill="#2e6e24" opacity="0.7"/>
+    <ellipse cx="220" cy="102" rx="16" ry="10" fill="#2e6e24" opacity="0.7"/>
+    <ellipse cx="176" cy="82" rx="14" ry="9" fill="#3a8a2e" opacity="0.65"/>
+  </svg>
+  <div class="oak-overlay-title">SJCC SCORING</div>
+  <div class="oak-overlay-dots">
+    <div class="oak-overlay-dot"></div>
+    <div class="oak-overlay-dot"></div>
+    <div class="oak-overlay-dot"></div>
+  </div>`;
+  document.body.appendChild(overlay);
+})();
 
 // ═══════════════════════════════════════════
 // HANDICAP HELPERS
@@ -444,28 +516,54 @@ function skinsTotals(skinsState, skinBet, players) {
 // ═══════════════════════════════════════════
 // RENDER ENGINE
 // ═══════════════════════════════════════════
-function render() {
+let _prevScreen = null;
+let _transitioning = false;
+
+function render(skipTransition) {
   const app = document.getElementById('app');
-  // Save scroll position of any scrollable element
   const scrollEl = document.querySelector('.screen') || document.querySelector('.tab-content');
   const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
-
   const s = state.screen;
-  if (s === 'home')            app.innerHTML = renderHome();
-  else if (s === 'wolf-setup') app.innerHTML = renderWolfSetup();
-  else if (s === 'wolf-game')  app.innerHTML = renderWolfGame();
-  else if (s === 'ns-setup')   app.innerHTML = renderNSSetup();
-  else if (s === 'ns-game')    app.innerHTML = renderNSGame();
-  else if (s === '9pt-setup')  app.innerHTML = render9ptSetup();
-  else if (s === '9pt-game')   app.innerHTML = render9ptGame();
-  else if (s === 'ss-setup')   app.innerHTML = renderSSSetup();
-  else if (s === 'ss-game')    app.innerHTML = renderSSGame();
-  attachEvents();
-  saveState();
 
-  // Restore scroll position
-  const newScrollEl = document.querySelector('.screen') || document.querySelector('.tab-content');
-  if (newScrollEl && scrollTop) newScrollEl.scrollTop = scrollTop;
+  // Determine if this is a screen change that warrants a transition
+  const isScreenChange = _prevScreen !== null && _prevScreen !== s;
+  const shouldTransition = !skipTransition && isScreenChange && !_transitioning;
+
+  function doRender() {
+    if (s === 'home')            app.innerHTML = renderHome();
+    else if (s === 'wolf-setup') app.innerHTML = renderWolfSetup();
+    else if (s === 'wolf-game')  app.innerHTML = renderWolfGame();
+    else if (s === 'ns-setup')   app.innerHTML = renderNSSetup();
+    else if (s === 'ns-game')    app.innerHTML = renderNSGame();
+    else if (s === '9pt-setup')  app.innerHTML = render9ptSetup();
+    else if (s === '9pt-game')   app.innerHTML = render9ptGame();
+    else if (s === 'ss-setup')   app.innerHTML = renderSSSetup();
+    else if (s === 'ss-game')    app.innerHTML = renderSSGame();
+    attachEvents();
+    saveState();
+    const newScrollEl = document.querySelector('.screen') || document.querySelector('.tab-content');
+    if (newScrollEl && scrollTop) newScrollEl.scrollTop = scrollTop;
+    _prevScreen = s;
+  }
+
+  if (shouldTransition) {
+    _transitioning = true;
+    const overlay = document.getElementById('oak-overlay');
+    // Fade overlay in
+    overlay.classList.add('visible');
+    setTimeout(() => {
+      // Render new screen behind overlay
+      doRender();
+      // Hold briefly then fade out
+      setTimeout(() => {
+        overlay.classList.remove('visible');
+        setTimeout(() => { _transitioning = false; }, 300);
+      }, 900);
+    }, 280);
+  } else {
+    doRender();
+    _prevScreen = s;
+  }
 }
 
 // ═══════════════════════════════════════════
