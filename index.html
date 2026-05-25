@@ -234,6 +234,7 @@ let state = loadState() || { screen: 'home' };
 if (!state.scores) state.scores = {};
 if (!state.players) state.players = [];
 if (!state.ptSaved) state.ptSaved = false;
+if (!state.ssSaved) state.ssSaved = false;
 
 // ═══════════════════════════════════════════
 // HANDICAP HELPERS
@@ -457,6 +458,8 @@ function render() {
   else if (s === 'ns-game')    app.innerHTML = renderNSGame();
   else if (s === '9pt-setup')  app.innerHTML = render9ptSetup();
   else if (s === '9pt-game')   app.innerHTML = render9ptGame();
+  else if (s === 'ss-setup')   app.innerHTML = renderSSSetup();
+  else if (s === 'ss-game')    app.innerHTML = renderSSGame();
   attachEvents();
   saveState();
 
@@ -600,9 +603,11 @@ function renderHome() {
     <div class="game-card" id="home-wolf"><div class="game-card-icon">🐺</div><div class="game-card-text"><h3>Wolf</h3><p>Hole-by-hole team gambling game</p></div></div>
     <div class="game-card" id="home-ns"><div class="game-card-icon">⛳</div><div class="game-card-text"><h3>Nassau + Skins</h3><p>Scorecard-based betting games</p></div></div>
     <div class="game-card" id="home-9pt"><div class="game-card-icon">🎯</div><div class="game-card-text"><h3>9 Point Game</h3><p>3-player (9pt) or 4-player (16pt) points game</p></div></div>
+    <div class="game-card" id="home-ss"><div class="game-card-icon">💰</div><div class="game-card-text"><h3>Skins Only</h3><p>Standalone skins — per hole or total pot</p></div></div>
     ${state.wolfSaved ? `<button class="big-btn ghost" id="resume-wolf">Resume Wolf Round</button>` : ''}
     ${state.nsSaved   ? `<button class="big-btn ghost" id="resume-ns">Resume Nassau/Skins Round</button>` : ''}
     ${state.ptSaved   ? `<button class="big-btn ghost" id="resume-9pt">Resume 9 Point Round</button>` : ''}
+    ${state.ssSaved   ? `<button class="big-btn ghost" id="resume-ss">Resume Skins Only Round</button>` : ''}
   </div>`;
 }
 
@@ -1274,15 +1279,19 @@ function attachEvents() {
   if (s === 'ns-game')    attachNSGameEvents();
   if (s === '9pt-setup')  attach9ptSetupEvents();
   if (s === '9pt-game')   attach9ptGameEvents();
+  if (s === 'ss-setup')   attachSSSetupEvents();
+  if (s === 'ss-game')    attachSSGameEvents();
 }
 
 function attachHomeEvents() {
   document.getElementById('home-wolf')?.addEventListener('click', () => { state.screen = 'wolf-setup'; render(); });
   document.getElementById('home-ns')?.addEventListener('click',   () => { state.screen = 'ns-setup';   render(); });
   document.getElementById('home-9pt')?.addEventListener('click',  () => { state.screen = '9pt-setup';  render(); });
+  document.getElementById('home-ss')?.addEventListener('click',    () => { state.screen = 'ss-setup';   render(); });
   document.getElementById('resume-wolf')?.addEventListener('click', () => { state.screen = 'wolf-game'; render(); });
   document.getElementById('resume-ns')?.addEventListener('click',   () => { state.screen = 'ns-game';   render(); });
   document.getElementById('resume-9pt')?.addEventListener('click',  () => { state.screen = '9pt-game';  render(); });
+  document.getElementById('resume-ss')?.addEventListener('click',   () => { state.screen = 'ss-game';   render(); });
 }
 
 function attachWolfSetupEvents() {
@@ -2137,6 +2146,487 @@ function attach9ptGameEvents() {
 
   document.getElementById('pt-new-round')?.addEventListener('click', () => { state.screen='9pt-setup'; state.ptSaved=false; render(); });
   document.getElementById('pt-back-to-game')?.addEventListener('click', () => { pg.tab='scorecard'; render(); });
+}
+
+// ═══════════════════════════════════════════
+// SKINS ONLY — STANDALONE
+// ═══════════════════════════════════════════
+
+function computeSSSkinsState() {
+  const ss = state.ssSetup;
+  const scores = state.ssGame.scores || {};
+  const players = ss.players;
+  const hcpPct = ss.hcpPct || 100;
+  const skinType = ss.skinType || 'net';
+  const carryover = ss.betMode === 'perhole' ? (ss.carryover || false) : false;
+
+  let skins = [];
+  let carryPot = 1;
+
+  for (let hi = 0; hi < 18; hi++) {
+    const hole = SJCC.holes[hi];
+    const holeScores = players.map(p => {
+      const g = scores[p.name] && scores[p.name][hi] != null ? scores[p.name][hi] : null;
+      if (g === null) return null;
+      const strokes = strokesOnHole(p.hcp, hole.hcp, hcpPct);
+      return { name: p.name, gross: g, net: g - strokes, strokes };
+    });
+
+    if (holeScores.some(s => s === null)) {
+      skins.push({ hole: hi+1, winner: null, pot: carryPot, pending: true, carried: carryPot > 1 });
+      continue;
+    }
+
+    let winner = null;
+    if (skinType === 'gross') {
+      const minG = Math.min(...holeScores.map(s => s.gross));
+      const gw = holeScores.filter(s => s.gross === minG);
+      if (gw.length === 1) winner = gw[0].name;
+    } else if (skinType === 'net') {
+      const minN = Math.min(...holeScores.map(s => s.net));
+      const nw = holeScores.filter(s => s.net === minN);
+      if (nw.length === 1) winner = nw[0].name;
+    } else if (skinType === 'canadian') {
+      const par = hole.par;
+      const minG = Math.min(...holeScores.map(s => s.gross));
+      const birdies = holeScores.filter(s => s.gross <= par - 1);
+      if (birdies.length === 1) {
+        winner = birdies[0].name;
+      } else if (birdies.length > 1) {
+        const minNet = Math.min(...birdies.map(s => s.net));
+        const nw = birdies.filter(s => s.net === minNet);
+        winner = nw.length === 1 ? nw[0].name : null;
+      } else {
+        const minNet = Math.min(...holeScores.map(s => s.net));
+        const nw = holeScores.filter(s => s.net === minNet);
+        if (nw.length === 1) winner = nw[0].name;
+      }
+    }
+
+    if (winner) {
+      skins.push({ hole: hi+1, winner, pot: carryPot, carried: carryPot > 1 });
+      carryPot = 1;
+    } else {
+      skins.push({ hole: hi+1, winner: null, pot: carryover ? carryPot : carryPot, carried: carryPot > 1, push: true });
+      if (carryover) carryPot++;
+    }
+  }
+  return skins;
+}
+
+function computeSSTotals(skinsState) {
+  const ss = state.ssSetup;
+  const players = ss.players;
+  const totals = {};
+  players.forEach(p => totals[p.name] = 0);
+
+  // Only count completed holes (not pending ones)
+  const completedSkins = skinsState.filter(s => !s.pending);
+
+  if (ss.betMode === 'perhole') {
+    // Each loser pays skinBet per skin won (with carryover multiplier)
+    completedSkins.forEach(s => {
+      if (!s.winner) return;
+      const amtCents = Math.round(ss.skinBet * s.pot * 100);
+      players.forEach(p => {
+        if (p.name === s.winner) totals[p.name] = parseFloat((totals[p.name] + amtCents * (players.length - 1) / 100).toFixed(2));
+        else totals[p.name] = parseFloat((totals[p.name] - amtCents / 100).toFixed(2));
+      });
+    });
+  } else {
+    // Total pot mode — pot is fixed, divide by skins won SO FAR
+    // Running value: each skin worth totalPot / totalSkinsWon at current moment
+    const totalPotCents = Math.round(ss.buyIn * players.length * 100);
+    const totalSkinsWon = completedSkins.filter(s => s.winner).length;
+    if (totalSkinsWon === 0) return totals;
+    const basePerSkinCents = Math.floor(totalPotCents / totalSkinsWon);
+    const remainderCents = totalPotCents - (basePerSkinCents * totalSkinsWon);
+
+    // Find player with most skins (gets remainder), tiebreak by player order
+    const skinCounts = {};
+    players.forEach(p => { skinCounts[p.name] = completedSkins.filter(s => s.winner === p.name).length; });
+    const sortedByWins = [...players].sort((a,b) => skinCounts[b.name] - skinCounts[a.name]);
+    const remainderPlayer = sortedByWins[0].name;
+
+    players.forEach(p => {
+      const skinsWon = skinCounts[p.name];
+      let payoutCents = skinsWon * basePerSkinCents;
+      if (p.name === remainderPlayer && skinsWon > 0) payoutCents += remainderCents;
+      // Gross payout from pot — everyone paid buy-in already, just show what you collect
+      totals[p.name] = parseFloat((payoutCents / 100).toFixed(2));
+    });
+  }
+  return totals;
+}
+
+// ── SS SETUP ──
+function renderSSSetup() {
+  const ss = state.ssSetup || {
+    players: [{name:'',hcp:0},{name:'',hcp:0},{name:'',hcp:0},{name:'',hcp:0}],
+    hcpPct: 100, skinType: 'net',
+    betMode: 'perhole', skinBet: 5, carryover: false,
+    buyIn: 10
+  };
+  state.ssSetup = ss;
+
+  const playerRows = ss.players.map((p, i) => {
+    const canRemove = i >= 2 && ss.players.length > 2;
+    return '<div class="player-setup-row">'
+      + '<span class="player-idx">'+(i+1)+'</span>'
+      + '<input class="text-input ss-pname" data-idx="'+i+'" placeholder="Player '+(i+1)+'" value="'+p.name+'" autocomplete="off"/>'
+      + '<input class="num-input ss-hcp" data-idx="'+i+'" placeholder="Hcp" value="'+p.hcp+'" type="number" min="0" max="54"/>'
+      + (canRemove ? '<button class="remove-btn" data-ss-remove="'+i+'">✕</button>' : '')
+      + '</div>';
+  }).join('');
+
+  const totalPot = ss.betMode === 'totalpot' ? ss.buyIn * ss.players.length : 0;
+
+  return '<div class="top-bar"><span class="top-bar-title">💰 SKINS ONLY</span><button class="back-btn" id="go-home">Home</button></div>'
+    + '<div class="screen">'
+    + '<div class="section-label">Players & Handicaps</div>'
+    + '<div class="card">'+playerRows
+    + (ss.players.length < 5 ? '<button class="add-btn" id="ss-add-player">+ Add Player ('+ss.players.length+'/5)</button>' : '')
+    + '</div>'
+    + '<div class="section-label">Handicap %</div>'
+    + '<div class="card"><div class="field-row"><span class="field-label">% of handicap used</span>'
+    + '<input class="num-input" id="ss-hcp-pct" value="'+ss.hcpPct+'" min="0" max="100" type="number"/>'
+    + '</div></div>'
+    + '<div class="section-label">Skin Type</div>'
+    + '<div class="card"><div class="field-row"><span class="field-label">Format</span>'
+    + '<div class="seg-control">'
+    + '<button class="seg-btn '+(ss.skinType==='net'?'active':'')+'" data-ss-skin="net">Net</button>'
+    + '<button class="seg-btn '+(ss.skinType==='gross'?'active':'')+'" data-ss-skin="gross">Gross</button>'
+    + '<button class="seg-btn '+(ss.skinType==='canadian'?'active':'')+'" data-ss-skin="canadian">🍁 Can</button>'
+    + '</div></div></div>'
+    + '<div class="section-label">Bet Structure</div>'
+    + '<div class="card">'
+    + '<div class="field-row" style="margin-bottom:12px"><span class="field-label">Mode</span>'
+    + '<div class="seg-control" style="width:180px">'
+    + '<button class="seg-btn '+(ss.betMode==='perhole'?'active':'')+'" data-ss-mode="perhole">Per Hole</button>'
+    + '<button class="seg-btn '+(ss.betMode==='totalpot'?'active':'')+'" data-ss-mode="totalpot">Total Pot</button>'
+    + '</div></div>'
+    + (ss.betMode === 'perhole'
+      ? '<div class="field-row"><span class="field-label">$ per skin</span>'
+        + '<input class="num-input" id="ss-skin-bet" value="'+ss.skinBet+'" type="number" min="1"/></div>'
+        + '<div class="toggle-row" style="margin-top:10px"><span class="toggle-label">Carryover</span>'
+        + '<label class="toggle"><input type="checkbox" id="ss-carryover" '+(ss.carryover?'checked':'')+'"/><span class="toggle-slider"></span></label>'
+        + '</div>'
+      : '<div class="field-row"><span class="field-label">Buy-in per player</span>'
+        + '<input class="num-input" id="ss-buy-in" value="'+ss.buyIn+'" type="number" min="1"/></div>'
+        + '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:10px 12px;margin-top:10px;font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:var(--muted)">'
+        + 'Total pot: <span style="color:var(--gold-bright)">$'+totalPot+'</span> · Split by total skins won'
+        + '</div>')
+    + '</div>'
+    + '<button class="big-btn green" id="ss-start">Start Round →</button>'
+    + '</div>';
+}
+
+// ── SS GAME ──
+function renderSSGame() {
+  const tab = state.ssGame.tab || 'scorecard';
+  return '<div class="top-bar"><span class="top-bar-title">💰 SKINS ONLY</span>'
+    + '<div style="display:flex;gap:6px">'
+    + '<button class="back-btn" id="ss-end-round" style="color:var(--red-text);border-color:var(--red)">End</button>'
+    + '<button class="back-btn" id="go-home">Home</button>'
+    + '</div></div>'
+    + '<div class="tabs">'
+    + '<button class="tab '+(tab==='scorecard'?'active':'')+'" data-ss-tab="scorecard">Scorecard</button>'
+    + '<button class="tab '+(tab==='leaderboard'?'active':'')+'" data-ss-tab="leaderboard">Leaderboard</button>'
+    + '<button class="tab '+(tab==='summary'?'active':'')+'" data-ss-tab="summary">Summary</button>'
+    + '</div>'
+    + '<div class="tab-content">'
+    + (tab==='scorecard'   ? renderSSScorecard()   : '')
+    + (tab==='leaderboard' ? renderSSLeaderboard() : '')
+    + (tab==='summary'     ? renderSSSummary()     : '')
+    + '</div>';
+}
+
+function renderSSScorecard() {
+  const sg = state.ssGame;
+  const ss = state.ssSetup;
+  const hi = sg.currentHole;
+  const hole = SJCC.holes[hi];
+  const skinsState = computeSSSkinsState();
+  const holeResult = skinsState[hi];
+
+  const scoreRows = ss.players.map(p => {
+    const gross = (sg.scores[p.name] || {})[hi];
+    const strokes = strokesOnHole(p.hcp, hole.hcp, ss.hcpPct);
+    const hasScore = gross != null;
+    const net = hasScore ? gross - strokes : null;
+    const slabel = hasScore ? scoreLabel(gross, hole.par) : '';
+    return '<div class="score-row">'
+      + '<div style="flex:1">'
+      + '<div class="score-player-name">'+p.name+'</div>'
+      + '<div style="display:flex;gap:6px;margin-top:2px">'
+      + '<span class="score-player-hcp">Hcp '+p.hcp+'</span>'
+      + (strokes > 0 ? '<span class="score-stroke-badge">+'+strokes+' stroke'+(strokes>1?'s':'')+'</span>' : '')
+      + '</div></div>'
+      + '<div class="score-adj">'
+      + '<button class="sc-btn" data-ss-down="'+p.name+'">−</button>'
+      + '<div class="sc-val '+slabel+'">'+(hasScore ? gross : '–')+'</div>'
+      + '<button class="sc-btn" data-ss-up="'+p.name+'">+</button>'
+      + '</div>'
+      + '<div class="sc-net">'+(net != null ? 'net '+net : '')+'</div>'
+      + '</div>';
+  }).join('');
+
+  let resultSnip = '';
+  if (!holeResult.pending) {
+    if (holeResult.winner) {
+      resultSnip = '<div class="hole-result-box" style="margin-bottom:10px">'
+        + '<div class="hole-result-row"><span class="label">Skin winner</span>'
+        + '<span class="chip green">'+holeResult.winner+(holeResult.carried?' ('+holeResult.pot+'× carry)':'')+'</span>'
+        + '</div></div>';
+    } else if (holeResult.push) {
+      resultSnip = '<div class="hole-result-box" style="margin-bottom:10px">'
+        + '<div class="hole-result-row"><span class="label">Hole result</span>'
+        + '<span class="chip gray">Push'+(ss.betMode==='perhole'&&ss.carryover?' → carries':'')+'</span>'
+        + '</div></div>';
+    }
+  }
+
+  return '<div>'
+    + '<div class="hole-nav">'
+    + '<div><div class="hole-nav-title">Hole '+hole.num+'</div><div class="hole-nav-sub">'+SJCC.name+'</div></div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button class="back-btn" id="ss-prev" '+(hi>0?'':'disabled')+'>← Prev</button>'
+    + '<button class="back-btn" id="ss-next" '+(hi<17?'':'disabled')+'>Next →</button>'
+    + '</div></div>'
+    + '<div class="hole-meta">'
+    + '<div class="hole-meta-item">Par <span>'+hole.par+'</span></div>'
+    + '<div class="hole-meta-item">Yds <span>'+hole.yds+'</span></div>'
+    + '<div class="hole-meta-item">Hcp <span>'+hole.hcp+'</span></div>'
+    + '</div>'
+    + '<div class="score-entry">'+scoreRows+'</div>'
+    + resultSnip
+    + (hi < 17
+      ? '<button class="big-btn gold" id="ss-confirm-hole">Confirm Hole '+hole.num+' →</button>'
+      : '<button class="big-btn green" id="ss-finish-round">Finish Round ✓</button>')
+    + '</div>';
+}
+
+function renderSSLeaderboard() {
+  const sg = state.ssGame;
+  const ss = state.ssSetup;
+  const skinsState = computeSSSkinsState();
+  const totals = computeSSTotals(skinsState);
+  const holesConfirmed = sg.confirmedHoles || 0;
+  const anyComplete = skinsState.some(s => !s.pending);
+  if (!anyComplete) return '<div style="text-align:center;color:var(--muted);padding:40px 0">Enter scores to see standings</div>';
+
+  const sorted = [...ss.players].sort((a,b) => totals[b.name] - totals[a.name]);
+  const lbRows = sorted.map((p, i) => {
+    const net = totals[p.name];
+    const cls = net>0?'pos':net<0?'neg':'zero';
+    const sign = net>0?'+':'';
+    const won = skinsState.filter(s=>s.winner===p.name).length;
+    const leaderClass = (i===0&&net>0) ? 'leader' : '';
+    return '<div class="lb-row '+leaderClass+'">'
+      + '<span class="lb-rank '+(i===0&&net>0?'gold':'')+'">'+(i===0&&net>0?'★':i+1)+'</span>'
+      + '<span class="lb-name">'+p.name+'</span>'
+      + '<span class="lb-detail">'+won+' skin'+(won!==1?'s':'')+'</span>'
+      + '<span class="lb-val '+cls+'">'+sign+'$'+fmt(Math.abs(net))+'</span>'
+      + '</div>';
+  }).join('');
+
+  // Hole log
+  const holeLog = skinsState.filter(s => !s.pending).map(s => {
+    const hole = SJCC.holes[s.hole-1];
+    if (s.pending) return '<div class="hole-result-row" style="padding:5px 0"><span class="label" style="color:var(--muted)">Hole '+s.hole+' (Par '+hole.par+')</span><span class="chip gray">Pending</span></div>';
+    if (s.push) return '<div class="hole-result-row" style="padding:5px 0"><span class="label" style="color:var(--muted)">Hole '+s.hole+' (Par '+hole.par+')</span><span class="chip gray">Push'+(ss.betMode==='perhole'&&ss.carryover?' → Carries':'')+'</span></div>';
+    return '<div class="hole-result-row" style="padding:5px 0"><span class="label" style="color:var(--muted)">Hole '+s.hole+' (Par '+hole.par+')</span>'
+      + '<span class="chip green">'+s.winner+(s.carried?' ('+s.pot+'×)':'')+'</span></div>';
+  }).join('');
+
+  const betInfo = ss.betMode === 'perhole'
+    ? '$'+ss.skinBet+'/skin'+(ss.carryover?' · Carryover':'')
+    : '$'+ss.buyIn+' buy-in · $'+(ss.buyIn*ss.players.length)+' pot';
+
+  return '<div>'
+    + '<div class="stat-strip">'
+    + '<div class="stat-item"><div class="stat-val">'+skinsState.filter(s=>!s.pending).length+'</div><div class="stat-lbl">Holes</div></div>'
+    + '<div class="stat-item"><div class="stat-val">'+skinsState.filter(s=>s.winner).length+'</div><div class="stat-lbl">Skins</div></div>'
+    + '<div class="stat-item"><div class="stat-val">'+(ss.skinType==='canadian'?'🍁':ss.skinType==='gross'?'Gross':'Net')+'</div><div class="stat-lbl">Format</div></div>'
+    + '</div>'
+    + '<div style="font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:var(--muted);text-align:center;margin-bottom:12px">'+betInfo+'</div>'
+    + lbRows
+    + '<div class="card" style="margin-top:12px"><div style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;color:var(--gold);letter-spacing:0.08em;margin-bottom:8px">Hole by Hole</div>'
+    + holeLog + '</div></div>';
+}
+
+function renderSSSummary() {
+  const sg = state.ssGame;
+  const ss = state.ssSetup;
+  const skinsState = computeSSSkinsState();
+  const totals = computeSSTotals(skinsState);
+  const sorted = [...ss.players].sort((a,b) => totals[b.name] - totals[a.name]);
+  const holesConfirmed = sg.confirmedHoles || 0;
+  const totalSkinsWon = skinsState.filter(s=>s.winner).length;
+
+  // Payout: just show what each player collects or nets
+  // For total pot: winners collect skins * valuePerSkin, losers collect nothing
+  // For per hole: net is already correct from computeSSTotals
+
+  const ptRows = sorted.map((p, i) => {
+    const net = totals[p.name];
+    const cls = net>0?'pos':net<0?'neg':'zero';
+    const sign = net>0?'+':'';
+    const won = skinsState.filter(s=>s.winner===p.name).length;
+    return '<div class="lb-row">'
+      + '<span class="lb-rank '+(i===0?'gold':'')+'">'+(i===0?'★':i+1)+'</span>'
+      + '<div style="flex:1;margin-left:8px"><div class="lb-name">'+p.name+'</div>'
+      + '<div style="font-family:IBM Plex Mono,monospace;font-size:0.7rem;color:var(--muted)">'+won+' skin'+(won!==1?'s':'')+'</div></div>'
+      + '<span class="lb-val '+cls+'" style="font-size:1.5rem">'+sign+'$'+fmt(Math.abs(net))+'</span>'
+      + '</div>';
+  }).join('');
+
+  const ledgerRows = sorted.map(p => {
+    const net = totals[p.name];
+    const won = skinsState.filter(s => s.winner === p.name).length;
+    if (won === 0) return '';
+    const cls = 'var(--green-text)';
+    return '<div class="hole-result-row" style="padding:7px 0">'
+      + '<span style="font-family:IBM Plex Mono,monospace;font-size:0.85rem;color:var(--white);font-weight:600">'+p.name+'</span>'
+      + '<span style="font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:var(--muted)">'+won+' skin'+(won!==1?'s':'')+' →</span>'
+      + '<span style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+cls+'">+$'+fmt(Math.abs(net > 0 ? net : won * (ss.betMode==='totalpot' ? (ss.buyIn*ss.players.length/totalSkinsWon) : ss.skinBet*(ss.players.length-1))))+'</span>'
+      + '</div>';
+  }).filter(Boolean).join('') || '<div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:10px">No skins won yet</div>';
+
+  const betSummary = ss.betMode === 'perhole'
+    ? '$'+ss.skinBet+' per skin · '+totalSkinsWon+' skins won'
+    : '$'+ss.buyIn+' buy-in · $'+(ss.buyIn*ss.players.length)+' pot · $'+fmt(totalSkinsWon>0?(ss.buyIn*ss.players.length/totalSkinsWon):0)+'/skin';
+
+  // Scorecard table
+  const completedHoles = skinsState.filter(s => !s.pending);
+  const holeHeaders = completedHoles.map(s =>
+    '<th style="font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:var(--muted);padding:3px 5px;text-align:center;font-weight:400">'+s.hole+'</th>'
+  ).join('');
+
+  const scorecardRows = ss.players.map(p => {
+    let cells = completedHoles.map(s => {
+      const hi = s.hole - 1;
+      const hole = SJCC.holes[hi];
+      const gross = (sg.scores[p.name] || {})[hi];
+      if (gross == null) return '<td style="color:var(--muted);font-family:IBM Plex Mono,monospace;font-size:0.7rem;padding:3px 5px;text-align:center">–</td>';
+      const strokes = strokesOnHole(p.hcp, hole.hcp, ss.hcpPct);
+      const net = gross - strokes;
+      const diff = gross - hole.par;
+      const color = diff <= -2 ? '#f0e68c' : diff === -1 ? 'var(--gold-bright)' : diff === 0 ? 'var(--white)' : diff === 1 ? '#ff9944' : 'var(--red-text)';
+      const isSkinWinner = s.winner === p.name;
+      return '<td style="color:'+color+';font-family:IBM Plex Mono,monospace;font-size:0.7rem;padding:3px 5px;text-align:center;'+(isSkinWinner?'background:rgba(86,211,100,0.15);border-radius:3px':'')+'">'
+        + gross + (strokes > 0 ? '*' : '') + (isSkinWinner ? '🏆' : '')
+        + '</td>';
+    }).join('');
+    return '<tr><td style="font-weight:600;font-size:0.82rem;padding:5px 8px;white-space:nowrap">'+p.name+'</td>'+cells+'</tr>';
+  }).join('');
+
+  const parRow = '<tr><td style="font-family:IBM Plex Mono,monospace;font-size:0.65rem;color:var(--muted);padding:2px 8px">Par</td>'
+    + completedHoles.map(s => '<td style="font-family:IBM Plex Mono,monospace;font-size:0.65rem;color:var(--muted);padding:2px 5px;text-align:center">'+SJCC.holes[s.hole-1].par+'</td>').join('')
+    + '</tr>';
+
+  const scorecard = completedHoles.length > 0
+    ? '<div class="card" style="overflow-x:auto;padding:10px;margin-top:12px">'      + '<div style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:6px">Scorecard <span style="font-size:0.7rem;font-family:IBM Plex Mono,monospace;color:var(--muted);font-weight:400">* = stroke · 🏆 = skin</span></div>'      + '<table style="border-collapse:collapse;width:100%"><thead><tr>'      + '<th style="font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:var(--muted);padding:3px 8px;text-align:left;font-weight:400">Player</th>'      + holeHeaders + '</tr>' + parRow + '</thead><tbody>'+scorecardRows+'</tbody></table></div>'
+    : '';
+
+  return '<div>'
+    + '<div class="stat-strip">'
+    + '<div class="stat-item"><div class="stat-val">'+completedHoles.length+'</div><div class="stat-lbl">Holes</div></div>'
+    + '<div class="stat-item"><div class="stat-val">'+totalSkinsWon+'</div><div class="stat-lbl">Skins</div></div>'
+    + '<div class="stat-item"><div class="stat-val">'+ss.players.length+'</div><div class="stat-lbl">Players</div></div>'
+    + '</div>'
+    + '<div style="font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:var(--muted);text-align:center;margin-bottom:12px">'+betSummary+'</div>'
+    + '<div class="lb-card"><div class="lb-card-header">Final Standings</div>'+ptRows+'</div>'
+    + '<div class="lb-card"><div class="lb-card-header">💰 Payouts</div><div style="padding:10px 14px">'+ledgerRows+'</div></div>'
+    + scorecard
+    + '<button class="big-btn green" id="ss-new-round">New Round</button>'
+    + '<button class="big-btn ghost" id="ss-back-to-game">← Back to Round</button>'
+    + '</div>';
+}
+
+// ── SS SETUP EVENTS ──
+function attachSSSetupEvents() {
+  const ss = state.ssSetup;
+  document.querySelectorAll('.ss-pname').forEach(inp => {
+    inp.addEventListener('input', e => { ss.players[parseInt(e.target.dataset.idx)].name = e.target.value; });
+    inp.addEventListener('blur', () => render());
+  });
+  document.querySelectorAll('.ss-hcp').forEach(inp => {
+    inp.addEventListener('input', e => { ss.players[parseInt(e.target.dataset.idx)].hcp = parseFloat(e.target.value)||0; });
+  });
+  document.querySelector('[data-ss-remove]')?.addEventListener('click', e => {
+    ss.players.splice(parseInt(e.target.dataset.ssRemove),1); render();
+  });
+  document.getElementById('ss-add-player')?.addEventListener('click', () => { ss.players.push({name:'',hcp:0}); render(); });
+  document.getElementById('ss-hcp-pct')?.addEventListener('input', e => { ss.hcpPct=parseFloat(e.target.value)||100; });
+  document.getElementById('ss-skin-bet')?.addEventListener('input', e => { ss.skinBet=parseFloat(e.target.value)||1; });
+  document.getElementById('ss-buy-in')?.addEventListener('input', e => { ss.buyIn=parseFloat(e.target.value)||1; render(); });
+  document.getElementById('ss-carryover')?.addEventListener('change', e => { ss.carryover=e.target.checked; });
+  document.querySelectorAll('[data-ss-skin]').forEach(btn => {
+    btn.addEventListener('click', e => { ss.skinType=e.target.dataset.ssSkin; render(); });
+  });
+  document.querySelectorAll('[data-ss-mode]').forEach(btn => {
+    btn.addEventListener('click', e => { ss.betMode=e.target.dataset.ssMode; render(); });
+  });
+  document.getElementById('ss-start')?.addEventListener('click', () => {
+    ss.players = ss.players.map((p,i)=>({...p, name:p.name.trim()||'Player '+(i+1)}));
+    const scores = {};
+    ss.players.forEach(p => { scores[p.name] = {}; });
+    state.ssGame = { tab:'scorecard', currentHole:0, scores, confirmedHoles:0 };
+    state.ssSaved = true;
+    state.screen = 'ss-game';
+    render();
+  });
+}
+
+// ── SS GAME EVENTS ──
+function attachSSGameEvents() {
+  const sg = state.ssGame;
+  const ss = state.ssSetup;
+
+  document.querySelectorAll('[data-ss-tab]').forEach(t => {
+    t.addEventListener('click', e => { sg.tab=e.target.dataset.ssTab; render(); });
+  });
+  document.getElementById('ss-end-round')?.addEventListener('click', () => { state.ssSaved=false; state.screen='home'; render(); });
+  document.getElementById('ss-prev')?.addEventListener('click', () => { if(sg.currentHole>0){sg.currentHole--; render();} });
+  document.getElementById('ss-next')?.addEventListener('click', () => { if(sg.currentHole<17){sg.currentHole++; render();} });
+
+  document.querySelectorAll('[data-ss-up]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const p = e.target.dataset.ssUp;
+      const hi = sg.currentHole;
+      if (!sg.scores[p]) sg.scores[p] = {};
+      const par = SJCC.holes[hi].par;
+      sg.scores[p][hi] = (sg.scores[p][hi] != null ? sg.scores[p][hi] : par - 1) + 1;
+      render();
+    });
+  });
+  document.querySelectorAll('[data-ss-down]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const p = e.target.dataset.ssDown;
+      const hi = sg.currentHole;
+      if (!sg.scores[p]) sg.scores[p] = {};
+      const par = SJCC.holes[hi].par;
+      const cur = sg.scores[p][hi] != null ? sg.scores[p][hi] : par + 1;
+      sg.scores[p][hi] = Math.max(1, cur - 1);
+      render();
+    });
+  });
+
+  document.getElementById('ss-confirm-hole')?.addEventListener('click', () => {
+    sg.confirmedHoles = (sg.confirmedHoles || 0) + 1;
+    sg.currentHole++;
+    render();
+  });
+
+  document.getElementById('ss-finish-round')?.addEventListener('click', () => {
+    sg.confirmedHoles = 18;
+    sg.tab = 'summary';
+    render();
+  });
+
+  document.getElementById('ss-new-round')?.addEventListener('click', () => { state.screen='ss-setup'; state.ssSaved=false; render(); });
+  document.getElementById('ss-back-to-game')?.addEventListener('click', () => { sg.tab='scorecard'; render(); });
 }
 // ── BOOT ──
 render();
