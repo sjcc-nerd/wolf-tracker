@@ -29,26 +29,33 @@ render()
   → restores scroll position
 ```
 
-`attachEvents()` re-wires all event listeners from scratch after every render. Screen-specific listeners are split into `attachHomeEvents()`, `attachWolfSetupEvents()`, `attachWolfGameEvents()`, `attachNSSetupEvents()`, `attachNSGameEvents()`.
+`attachEvents()` re-wires all event listeners from scratch after every render. Screen-specific listeners are split into `attachHomeEvents()`, `attachWolfSetupEvents()`, `attachWolfGameEvents()`, `attachNSSetupEvents()`, `attachNSGameEvents()`, `attach9ptSetupEvents()`, `attach9ptGameEvents()`, `attachSSSetupEvents()`, `attachSSGameEvents()`.
 
 ### State Shape
 
 ```
 state.screen       — 'home' | 'wolf-setup' | 'wolf-game' | 'ns-setup' | 'ns-game'
+                     | '9pt-setup' | '9pt-game' | 'ss-setup' | 'ss-game'
 state.players      — [{ name, hcp }] — shared across Nassau + Skins
 state.scores       — { [playerName]: { [holeIndex]: grossScore } } — 0-indexed
 state.wolf         — Wolf setup: { players[], defaultBet }
 state.wolfGame     — Wolf runtime: { holes[], currentHole, holeInput, tab, editingHole }
 state.nsSetup      — Nassau/Skins config (see below)
 state.nsGame       — Nassau/Skins runtime: { currentHole, presses[], tab }
-state.wolfSaved    — boolean — shows Resume button on home
-state.nsSaved      — boolean — shows Resume button on home
+state.ptSetup      — 9pt/16pt config: { players[], hcpPct, blitz, vpp }
+state.ptGame       — 9pt/16pt runtime: { tab, currentHole, scores, holes[] }
+state.ssSetup      — Skins-only config: { players[], hcpPct, skinType, betMode, skinBet, carryover, buyIn }
+state.ssGame       — Skins-only runtime: { tab, currentHole, scores, confirmedHoles }
+state.wolfSaved / state.nsSaved / state.ptSaved / state.ssSaved
+                   — booleans — show Resume buttons on home
 ```
 
 `nsSetup` contains all config for both Nassau and Skins games:
 - `players[]`, `hcpPct`, `nassau`, `nassauFormat` ('match'|'stroke'), `teamA[]`, `teamB[]`
 - `betFront`, `betBack`, `betTotal`, `autoPress`, `presses[]`
 - `skins`, `skinType` ('net'|'gross'|'canadian'), `skinBet`, `carryover`
+
+`ssSetup.betMode` is `'perhole'` (uses `skinBet` + optional `carryover`) or `'totalpot'` (uses `buyIn` per player; pot splits by total skins won; per-skin value floats as more skins are won).
 
 ### Key Functions
 
@@ -66,6 +73,11 @@ state.nsSaved      — boolean — shows Resume button on home
 | `wolfHoleResult(bet, statuses, players)` | Returns $ delta per player for one Wolf hole |
 | `wolfTotals()` | Aggregates cumulative Wolf totals across all holes |
 | `checkAutoPress(holeIdx)` | Fires auto-press when a team goes 2-down; called on Confirm Hole only |
+| `compute9ptHole(netScores, blitz)` | Returns `{pts, blitz}` — per-player points for one hole, with full tie-handling for 3p (9pt) and 4p (16pt) |
+| `compute9ptTotals()` | Cumulative points totals across played holes |
+| `compute9ptLedger()` | Pairwise settlement: one edge per player-pair, amount = \|point_diff\| × `vpp`. Each pair settles independently (standard 9pt semantics — `vpp` is $/point of pairwise difference, not $/point of total) |
+| `computeSSSkinsState()` | Per-hole skins results for standalone Skins Only (mirrors `computeSkinsState` but reads from `state.ssGame.scores`) |
+| `computeSSTotals(skinsState)` | Net $ per player; handles both `perhole` and `totalpot` bet modes |
 | `showToast(msg)` | Dismissing notification — auto-removes after 2.5s |
 | `fmt(n)` | Formats a number — strips unnecessary decimals |
 
@@ -113,11 +125,29 @@ Numeric inputs (scores, bets) call `render()` immediately on change.
 - Previous Holes tab allows editing any past hole
 - `state.wolf.players[]` is a flat array of name strings (not objects)
 
+## 9 Point Game (and 16 Point)
+
+- 3 players → 9 points per hole; 4 players → 16 points per hole (same engine, different totals + tie tables)
+- Per hole: lowest **net** score wins; points distributed per `compute9ptHole` tie table
+- 3p base distribution: `5-3-1`; 4p base: `7-5-3-1`. Every tie shape is enumerated explicitly in the function — do not generalize without re-deriving the math (point totals must equal 9 or 16)
+- **Blitz** (optional): if the winner beats the next-best net by ≥ 2 strokes, they take all points for the hole
+- **Settlement is pairwise**, not pot-based. Each pair of players settles independently: `|point_diff| × vpp` dollars flow from the lower-points player to the higher. `vpp` of $1 in a 4-player round can move much more than $1 per point across the table — call this out to first-time users
+
+## Skins Only
+
+- Standalone skins (2–5 players) — does not share scores with Nassau/Skins
+- Two bet modes drive different math:
+  - `perhole` — fixed `$skinBet` per skin won; optional `carryover` accumulates pot multiplier on pushes
+  - `totalpot` — fixed `$buyIn` per player; total pot splits across all skins won; per-skin value floats as more skins are won, with remainder cents going to the player with most skins (player order breaks ties)
+- Carryover is only meaningful in `perhole` mode (force-disabled in `totalpot`)
+- Summary "Final Standings" column shows gross payout in `totalpot` mode, not net P&L — players who win zero skins show $0 rather than `-$buyIn`. Surface as a follow-up if it bites in real rounds
+
 ## Known Issues / Backlog
 
-- Nassau stroke play mode — logic scaffolded but not implemented
+- Nassau stroke play mode — logic scaffolded but `bestBallHole()` returns the same value for both `'match'` and `'stroke'` branches
 - Auto press edge cases at end of front/back 9 not fully stress-tested
+- Skins Only `totalpot` summary shows gross payout, not net (buy-in not subtracted from non-winners)
 - No confirmation screen before ending a round
 - No multi-course support — SJCC is hardcoded
-- App name / repo name may change (currently `wolf-tracker`, app branded as `SJCC SCORING`)
-- No PWA manifest (service worker is in place but no manifest.json for home screen install)
+- App name / repo name mismatch (`wolf-tracker` repo, `SJCC SCORING` brand)
+- No PWA manifest (service worker is in place but no `manifest.json` for home screen install)

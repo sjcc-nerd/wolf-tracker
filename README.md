@@ -23,15 +23,22 @@ A mobile-first single-file web app for tracking golf gambling games. No framewor
 All app state lives in a single `state` object, saved to localStorage on every render via `saveState()` under key `tbd_scoring_v2`. The UI re-renders by calling `render()`, which sets `innerHTML` on the root `#app` div based on `state.screen`.
 
 ```
-state.screen          — current screen (home | wolf-setup | wolf-game | ns-setup | ns-game)
+state.screen          — current screen (home | wolf-setup | wolf-game | ns-setup | ns-game
+                        | 9pt-setup | 9pt-game | ss-setup | ss-game)
 state.players         — array of { name, hcp } — shared across Nassau/Skins
 state.scores          — { [playerName]: { [holeIndex]: grossScore } } — 0-indexed holes
 state.wolf            — Wolf setup config { players[], defaultBet }
 state.wolfGame        — Wolf game state { holes[], currentHole, holeInput, tab, editingHole }
 state.nsSetup         — Nassau/Skins config (see below)
 state.nsGame          — Nassau/Skins game state { currentHole, presses[], tab }
+state.ptSetup         — 9pt/16pt config { players[], hcpPct, blitz, vpp }
+state.ptGame          — 9pt/16pt runtime { tab, currentHole, scores, holes[] }
+state.ssSetup         — Skins-only config { players[], hcpPct, skinType, betMode, skinBet, carryover, buyIn }
+state.ssGame          — Skins-only runtime { tab, currentHole, scores, confirmedHoles }
 state.wolfSaved       — boolean, shows Resume button on home screen
 state.nsSaved         — boolean, shows Resume button on home screen
+state.ptSaved         — boolean, shows Resume button for 9pt round
+state.ssSaved         — boolean, shows Resume button for Skins Only round
 ```
 
 ### nsSetup Object
@@ -128,6 +135,28 @@ Scorecard-based. Played simultaneously from a shared scorecard.
 - **Math:** losers fund pot, winners split equally
 - Live leaderboard updates as scores entered
 
+### 9 Point Game (and 16 Point)
+Per-hole points game played alongside the round.
+
+- 3 players → **9 Point** (5-3-1 base distribution)
+- 4 players → **16 Point** (7-5-3-1 base distribution)
+- Each hole: lowest **net** score wins; points distributed per hard-coded tie table (every tie shape is enumerated explicitly so totals always equal 9 or 16)
+- **Blitz** (optional): if the winner beats next-best net by 2+ strokes, they sweep all points for the hole
+- **Value per point ($):** each pair of players settles independently for `|point_diff| × vpp`. Note this is per-pair — in a 4-player round at `vpp=$1`, every point of lead vs. each of 3 opponents is $1, so totals can move faster than they look
+- **Summary:** "Who Owes Who" lists every pair settlement plus a full points-per-hole scorecard
+- Tabs: Scorecard / Leaderboard / Summary
+
+### Skins Only
+Standalone skins game. Independent scores — does not share with Nassau/Skins.
+
+- 2–5 players
+- Same skin types as the combined game: Net (default), Gross, **Canadian** (gross birdie beats net birdie)
+- Two bet structures:
+  - **Per Hole:** fixed `$ per skin`; optional carryover (pot multiplier accumulates on pushes)
+  - **Total Pot:** fixed `buy-in` per player; whole pot splits across total skins won at end of round; per-skin value floats as more skins are won (extra cents go to the player with most skins, then to player order)
+- Live leaderboard + per-hole result log
+- Summary shows scorecard with stroke markers and a 🏆 on skin-winning holes
+
 ---
 
 ## Key Functions
@@ -145,6 +174,11 @@ Scorecard-based. Played simultaneously from a shared scorecard.
 | `skinsTotals(skinsState, skinBet, players)` | Returns net $ per player for skins |
 | `wolfHoleResult(bet, statuses, players)` | Returns $ delta per player for a Wolf hole |
 | `checkAutoPress(holeIdx)` | Fires on Confirm Hole only; spawns press if 2-down and parent hasn't spawned |
+| `compute9ptHole(netScores, blitz)` | Returns `{pts, blitz}` per-player points for one 9pt/16pt hole, with full tie-handling |
+| `compute9ptTotals()` | Cumulative 9pt/16pt point totals across played holes |
+| `compute9ptLedger()` | Pairwise settlement for 9pt/16pt: one edge per player-pair, amount = `|point_diff| × vpp`. Each pair is an independent transaction (standard 9pt semantics) |
+| `computeSSSkinsState()` | Per-hole skins results for the standalone Skins Only game |
+| `computeSSTotals(skinsState)` | Net $ per player for Skins Only; handles both `perhole` and `totalpot` bet modes |
 | `showToast(msg)` | Shows a dismissing notification at bottom of screen |
 | `fmt(n)` | Formats a number, strips unnecessary decimals |
 
@@ -152,8 +186,9 @@ Scorecard-based. Played simultaneously from a shared scorecard.
 
 ## Known Issues / Backlog
 
-- [ ] Nassau stroke play mode — logic scaffolded but not fully implemented
+- [ ] Nassau stroke play mode — toggle exists but `bestBallHole()` returns identical values for both `'match'` and `'stroke'` branches
 - [ ] Auto press edge cases at end of front/back 9 not fully stress-tested
+- [ ] Skins Only `totalpot` summary shows gross pot collected, not net P&L — players who win 0 skins display $0 instead of `-$buyIn`
 - [ ] No confirmation screen before ending a round
 - [ ] No multi-course support — SJCC hardcoded
 - [ ] Repo/app name mismatch — repo is `wolf-tracker`, app is branded `SJCC SCORING`
