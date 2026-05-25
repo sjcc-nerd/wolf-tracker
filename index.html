@@ -233,6 +233,7 @@ let state = loadState() || { screen: 'home' };
 // Ensure critical objects always exist
 if (!state.scores) state.scores = {};
 if (!state.players) state.players = [];
+if (!state.ptSaved) state.ptSaved = false;
 
 // ═══════════════════════════════════════════
 // HANDICAP HELPERS
@@ -454,6 +455,8 @@ function render() {
   else if (s === 'wolf-game')  app.innerHTML = renderWolfGame();
   else if (s === 'ns-setup')   app.innerHTML = renderNSSetup();
   else if (s === 'ns-game')    app.innerHTML = renderNSGame();
+  else if (s === '9pt-setup')  app.innerHTML = render9ptSetup();
+  else if (s === '9pt-game')   app.innerHTML = render9ptGame();
   attachEvents();
   saveState();
 
@@ -473,141 +476,133 @@ function renderHome() {
       <svg width="100%" viewBox="0 0 380 300" role="img" xmlns="http://www.w3.org/2000/svg" style="max-width:320px;display:block;margin:0 auto">
         <title>SJCC Oak Tree</title>
         <desc>Sculptural oak tree with sprawling branches, propped limb, and fuller canopy</desc>
-        <style>
-          .trunk { fill: #3d2208; }
-          .bark-line { fill: none; stroke: #2a1504; stroke-linecap: round; }
-          .br { fill: none; stroke: #3d2208; stroke-linecap: round; stroke-linejoin: round; }
-          .br-light { fill: none; stroke: #5c3518; stroke-linecap: round; }
-          .leaf { fill: #2e6e24; }
-          .leaf-mid { fill: #3a8a2e; }
-          .leaf-hi { fill: #4aa83a; }
-          .prop { fill: none; stroke: #2a1504; stroke-linecap: round; }
-          .oak-shadow { fill: #0a1a06; opacity: 0.25; }
-        </style>
-        <ellipse cx="185" cy="284" rx="90" ry="9" class="oak-shadow"/>
-        <line x1="96" y1="172" x2="88" y2="272" class="prop" stroke-width="6"/>
-        <line x1="88" y1="272" x2="100" y2="274" class="prop" stroke-width="4"/>
-        <line x1="88" y1="272" x2="76" y2="274" class="prop" stroke-width="4"/>
-        <path d="M160 266 Q148 274 132 270 Q120 268 112 272" class="br" stroke-width="5"/>
-        <path d="M165 270 Q158 280 148 282" class="br" stroke-width="3"/>
-        <path d="M210 266 Q222 274 238 270 Q250 268 258 272" class="br" stroke-width="5"/>
-        <path d="M205 270 Q212 280 222 282" class="br" stroke-width="3"/>
-        <path d="M160 268 Q154 230 150 195 Q147 165 152 138 Q156 118 164 102 Q170 88 178 76 L186 78 Q193 91 200 106 Q208 122 212 143 Q216 170 214 200 Q212 235 205 268 Z" class="trunk"/>
+
+        <ellipse cx="185" cy="284" rx="90" ry="9" fill="#0a1a06" opacity="0.25"/>
+        <line x1="96" y1="172" x2="88" y2="272" fill="none" stroke="#2a1504" stroke-linecap="round" stroke-width="6"/>
+        <line x1="88" y1="272" x2="100" y2="274" fill="none" stroke="#2a1504" stroke-linecap="round" stroke-width="4"/>
+        <line x1="88" y1="272" x2="76" y2="274" fill="none" stroke="#2a1504" stroke-linecap="round" stroke-width="4"/>
+        <path d="M160 266 Q148 274 132 270 Q120 268 112 272" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="5"/>
+        <path d="M165 270 Q158 280 148 282" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+        <path d="M210 266 Q222 274 238 270 Q250 268 258 272" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="5"/>
+        <path d="M205 270 Q212 280 222 282" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+        <path d="M160 268 Q154 230 150 195 Q147 165 152 138 Q156 118 164 102 Q170 88 178 76 L186 78 Q193 91 200 106 Q208 122 212 143 Q216 170 214 200 Q212 235 205 268 Z" fill="#3d2208"/>
         <path d="M175 265 Q172 235 170 200 Q168 172 172 145 Q175 125 182 108 Q184 125 188 148 Q192 175 190 202 Q188 232 185 265 Z" fill="#2a1504" opacity="0.45"/>
-        <path d="M165 245 Q170 240 174 244" class="bark-line" stroke-width="1.2"/>
-        <path d="M205 250 Q200 245 196 248" class="bark-line" stroke-width="1.2"/>
-        <path d="M162 218 Q167 213 171 216" class="bark-line" stroke-width="1.2"/>
-        <path d="M210 222 Q205 218 201 220" class="bark-line" stroke-width="1.2"/>
-        <path d="M156 192 Q161 188 165 191" class="bark-line" stroke-width="1.1"/>
-        <path d="M212 196 Q207 192 203 194" class="bark-line" stroke-width="1.1"/>
-        <path d="M158 165 Q163 161 167 164" class="bark-line" stroke-width="1"/>
-        <path d="M210 168 Q205 164 201 167" class="bark-line" stroke-width="1"/>
-        <path d="M158 148 Q130 138 108 132 Q80 124 58 120 Q36 116 18 122" class="br" stroke-width="18"/>
-        <path d="M18 122 Q10 126 8 134 Q6 142 12 148" class="br" stroke-width="14"/>
-        <path d="M68 120 Q54 108 44 96 Q36 86 32 74" class="br" stroke-width="8"/>
-        <path d="M32 74 Q28 64 30 54 Q32 44 38 38" class="br" stroke-width="5"/>
-        <path d="M38 38 Q42 30 46 26" class="br" stroke-width="3.5"/>
-        <path d="M32 74 Q22 68 16 60" class="br" stroke-width="4"/>
-        <path d="M108 130 Q100 114 96 98 Q93 85 96 72" class="br" stroke-width="7"/>
-        <path d="M96 72 Q94 60 98 50 Q102 40 108 34" class="br" stroke-width="5"/>
-        <path d="M108 34 Q112 26 116 22" class="br" stroke-width="3"/>
-        <path d="M96 72 Q86 64 80 54" class="br" stroke-width="4"/>
-        <path d="M44 96 Q38 84 36 72" class="br" stroke-width="4"/>
-        <path d="M200 132 Q220 118 242 108 Q264 98 286 92" class="br" stroke-width="12"/>
-        <path d="M286 92 Q300 88 310 82 Q320 76 326 68" class="br" stroke-width="8"/>
-        <path d="M326 68 Q332 60 334 50 Q336 40 332 32" class="br" stroke-width="5"/>
-        <path d="M332 32 Q330 24 328 18" class="br" stroke-width="3"/>
-        <path d="M310 82 Q316 70 318 58" class="br" stroke-width="4"/>
-        <path d="M286 92 Q288 78 286 66 Q284 56 280 48" class="br" stroke-width="6"/>
-        <path d="M280 48 Q278 38 280 28" class="br" stroke-width="4"/>
-        <path d="M242 108 Q246 92 244 78 Q242 66 238 56" class="br" stroke-width="6"/>
-        <path d="M238 56 Q236 44 238 34" class="br" stroke-width="4"/>
-        <path d="M182 100 Q176 82 172 64 Q168 48 170 34" class="br" stroke-width="8"/>
-        <path d="M170 34 Q168 22 170 14" class="br" stroke-width="5"/>
-        <path d="M170 34 Q160 26 154 18" class="br" stroke-width="4"/>
-        <path d="M182 100 Q192 82 196 66 Q200 52 198 38" class="br" stroke-width="7"/>
-        <path d="M198 38 Q200 26 198 16" class="br" stroke-width="4"/>
-        <path d="M198 38 Q208 30 214 22" class="br" stroke-width="3.5"/>
-        <path d="M38 38 Q34 30 36 22" class="br-light" stroke-width="2"/>
-        <path d="M16 60 Q10 52 8 44" class="br-light" stroke-width="2"/>
-        <path d="M80 54 Q74 46 72 38" class="br-light" stroke-width="2"/>
-        <path d="M108 34 Q106 24 108 16" class="br-light" stroke-width="1.8"/>
-        <path d="M170 14 Q168 8 172 4" class="br-light" stroke-width="1.5"/>
-        <path d="M198 16 Q200 8 198 2" class="br-light" stroke-width="1.5"/>
-        <path d="M214 22 Q218 14 216 8" class="br-light" stroke-width="1.5"/>
-        <path d="M154 18 Q150 10 152 4" class="br-light" stroke-width="1.5"/>
-        <path d="M280 28 Q278 18 282 12" class="br-light" stroke-width="1.8"/>
-        <path d="M318 58 Q322 48 320 40" class="br-light" stroke-width="1.8"/>
-        <path d="M332 32 Q336 22 334 14" class="br-light" stroke-width="1.5"/>
-        <path d="M238 34 Q236 24 238 16" class="br-light" stroke-width="1.8"/>
-        <path d="M36 72 Q30 62 28 52" class="br-light" stroke-width="2"/>
-        <ellipse cx="14" cy="136" rx="22" ry="14" class="leaf" opacity="0.9"/>
-        <ellipse cx="8" cy="128" rx="16" ry="10" class="leaf-mid"/>
-        <ellipse cx="20" cy="122" rx="14" ry="9" class="leaf-hi"/>
-        <ellipse cx="34" cy="34" rx="18" ry="12" class="leaf"/>
-        <ellipse cx="28" cy="26" rx="13" ry="8" class="leaf-mid"/>
-        <ellipse cx="38" cy="20" rx="11" ry="8" class="leaf-hi"/>
-        <ellipse cx="12" cy="52" rx="16" ry="10" class="leaf"/>
-        <ellipse cx="8" cy="44" rx="11" ry="8" class="leaf-mid"/>
-        <ellipse cx="78" cy="46" rx="16" ry="11" class="leaf"/>
-        <ellipse cx="72" cy="38" rx="12" ry="8" class="leaf-mid"/>
-        <ellipse cx="106" cy="26" rx="18" ry="12" class="leaf"/>
-        <ellipse cx="112" cy="18" rx="14" ry="9" class="leaf-mid"/>
-        <ellipse cx="104" cy="14" rx="10" ry="7" class="leaf-hi"/>
-        <ellipse cx="32" cy="62" rx="12" ry="8" class="leaf-mid" opacity="0.8"/>
-        <ellipse cx="168" cy="10" rx="18" ry="12" class="leaf"/>
-        <ellipse cx="162" cy="4" rx="12" ry="8" class="leaf-mid"/>
-        <ellipse cx="174" cy="2" rx="10" ry="7" class="leaf-hi"/>
-        <ellipse cx="198" cy="8" rx="17" ry="11" class="leaf"/>
-        <ellipse cx="204" cy="2" rx="12" ry="8" class="leaf-mid"/>
-        <ellipse cx="194" cy="4" rx="10" ry="7" class="leaf-hi"/>
-        <ellipse cx="154" cy="14" rx="12" ry="8" class="leaf-mid"/>
-        <ellipse cx="216" cy="16" rx="12" ry="8" class="leaf-mid"/>
-        <ellipse cx="330" cy="26" rx="18" ry="12" class="leaf"/>
-        <ellipse cx="336" cy="18" rx="13" ry="8" class="leaf-mid"/>
-        <ellipse cx="326" cy="16" rx="10" ry="7" class="leaf-hi"/>
-        <ellipse cx="318" cy="52" rx="15" ry="10" class="leaf"/>
-        <ellipse cx="322" cy="44" rx="11" ry="8" class="leaf-mid"/>
-        <ellipse cx="280" cy="22" rx="16" ry="11" class="leaf"/>
-        <ellipse cx="276" cy="14" rx="11" ry="8" class="leaf-mid"/>
-        <ellipse cx="238" cy="28" rx="15" ry="10" class="leaf"/>
-        <ellipse cx="234" cy="20" rx="11" ry="7" class="leaf-mid"/>
-        <ellipse cx="96" cy="96" rx="14" ry="9" class="leaf" opacity="0.7"/>
-        <ellipse cx="244" cy="104" rx="13" ry="8" class="leaf" opacity="0.7"/>
-        <ellipse cx="170" cy="58" rx="12" ry="8" class="leaf-mid" opacity="0.7"/>
-        <ellipse cx="196" cy="52" rx="11" ry="7" class="leaf-mid" opacity="0.7"/>
-        <ellipse cx="50" cy="116" rx="18" ry="11" class="leaf" opacity="0.85"/>
-        <ellipse cx="44" cy="108" rx="13" ry="8" class="leaf-mid"/>
-        <ellipse cx="82" cy="122" rx="16" ry="10" class="leaf" opacity="0.85"/>
-        <ellipse cx="76" cy="114" rx="12" ry="8" class="leaf-mid"/>
-        <ellipse cx="26" cy="128" rx="14" ry="9" class="leaf" opacity="0.8"/>
-        <ellipse cx="24" cy="68" rx="13" ry="8" class="leaf" opacity="0.8"/>
-        <ellipse cx="54" cy="82" rx="14" ry="9" class="leaf-mid" opacity="0.8"/>
-        <ellipse cx="46" cy="50" rx="13" ry="8" class="leaf" opacity="0.8"/>
-        <ellipse cx="182" cy="34" rx="16" ry="10" class="leaf-mid" opacity="0.85"/>
-        <ellipse cx="186" cy="24" rx="12" ry="8" class="leaf-hi" opacity="0.8"/>
-        <ellipse cx="144" cy="28" rx="13" ry="8" class="leaf" opacity="0.75"/>
-        <ellipse cx="226" cy="26" rx="13" ry="8" class="leaf" opacity="0.75"/>
-        <ellipse cx="260" cy="90" rx="16" ry="10" class="leaf" opacity="0.8"/>
-        <ellipse cx="256" cy="80" rx="12" ry="8" class="leaf-mid" opacity="0.8"/>
-        <ellipse cx="302" cy="76" rx="15" ry="9" class="leaf" opacity="0.8"/>
-        <ellipse cx="298" cy="66" rx="11" ry="7" class="leaf-mid" opacity="0.8"/>
-        <ellipse cx="340" cy="40" rx="13" ry="8" class="leaf" opacity="0.8"/>
-        <ellipse cx="258" cy="46" rx="13" ry="8" class="leaf-mid" opacity="0.8"/>
-        <ellipse cx="130" cy="108" rx="18" ry="12" class="leaf" opacity="0.7"/>
-        <ellipse cx="126" cy="98" rx="13" ry="8" class="leaf-mid" opacity="0.7"/>
-        <ellipse cx="220" cy="102" rx="16" ry="10" class="leaf" opacity="0.7"/>
-        <ellipse cx="216" cy="92" rx="12" ry="8" class="leaf-mid" opacity="0.7"/>
-        <ellipse cx="176" cy="82" rx="14" ry="9" class="leaf-mid" opacity="0.65"/>
-        <ellipse cx="200" cy="78" rx="13" ry="8" class="leaf-mid" opacity="0.65"/>
+        <path d="M165 245 Q170 240 174 244" fill="none" stroke="#2a1504" stroke-linecap="round" stroke-width="1.2"/>
+        <path d="M205 250 Q200 245 196 248" fill="none" stroke="#2a1504" stroke-linecap="round" stroke-width="1.2"/>
+        <path d="M162 218 Q167 213 171 216" fill="none" stroke="#2a1504" stroke-linecap="round" stroke-width="1.2"/>
+        <path d="M210 222 Q205 218 201 220" fill="none" stroke="#2a1504" stroke-linecap="round" stroke-width="1.2"/>
+        <path d="M156 192 Q161 188 165 191" fill="none" stroke="#2a1504" stroke-linecap="round" stroke-width="1.1"/>
+        <path d="M212 196 Q207 192 203 194" fill="none" stroke="#2a1504" stroke-linecap="round" stroke-width="1.1"/>
+        <path d="M158 165 Q163 161 167 164" fill="none" stroke="#2a1504" stroke-linecap="round" stroke-width="1"/>
+        <path d="M210 168 Q205 164 201 167" fill="none" stroke="#2a1504" stroke-linecap="round" stroke-width="1"/>
+        <path d="M158 148 Q130 138 108 132 Q80 124 58 120 Q36 116 18 122" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="18"/>
+        <path d="M18 122 Q10 126 8 134 Q6 142 12 148" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="14"/>
+        <path d="M68 120 Q54 108 44 96 Q36 86 32 74" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
+        <path d="M32 74 Q28 64 30 54 Q32 44 38 38" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="5"/>
+        <path d="M38 38 Q42 30 46 26" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5"/>
+        <path d="M32 74 Q22 68 16 60" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+        <path d="M108 130 Q100 114 96 98 Q93 85 96 72" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+        <path d="M96 72 Q94 60 98 50 Q102 40 108 34" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="5"/>
+        <path d="M108 34 Q112 26 116 22" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+        <path d="M96 72 Q86 64 80 54" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+        <path d="M44 96 Q38 84 36 72" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+        <path d="M200 132 Q220 118 242 108 Q264 98 286 92" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="12"/>
+        <path d="M286 92 Q300 88 310 82 Q320 76 326 68" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
+        <path d="M326 68 Q332 60 334 50 Q336 40 332 32" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="5"/>
+        <path d="M332 32 Q330 24 328 18" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+        <path d="M310 82 Q316 70 318 58" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+        <path d="M286 92 Q288 78 286 66 Q284 56 280 48" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"/>
+        <path d="M280 48 Q278 38 280 28" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+        <path d="M242 108 Q246 92 244 78 Q242 66 238 56" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"/>
+        <path d="M238 56 Q236 44 238 34" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+        <path d="M182 100 Q176 82 172 64 Q168 48 170 34" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
+        <path d="M170 34 Q168 22 170 14" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="5"/>
+        <path d="M170 34 Q160 26 154 18" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+        <path d="M182 100 Q192 82 196 66 Q200 52 198 38" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+        <path d="M198 38 Q200 26 198 16" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+        <path d="M198 38 Q208 30 214 22" fill="none" stroke="#3d2208" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5"/>
+        <path d="M38 38 Q34 30 36 22" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="2"/>
+        <path d="M16 60 Q10 52 8 44" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="2"/>
+        <path d="M80 54 Q74 46 72 38" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="2"/>
+        <path d="M108 34 Q106 24 108 16" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="1.8"/>
+        <path d="M170 14 Q168 8 172 4" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="1.5"/>
+        <path d="M198 16 Q200 8 198 2" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="1.5"/>
+        <path d="M214 22 Q218 14 216 8" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="1.5"/>
+        <path d="M154 18 Q150 10 152 4" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="1.5"/>
+        <path d="M280 28 Q278 18 282 12" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="1.8"/>
+        <path d="M318 58 Q322 48 320 40" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="1.8"/>
+        <path d="M332 32 Q336 22 334 14" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="1.5"/>
+        <path d="M238 34 Q236 24 238 16" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="1.8"/>
+        <path d="M36 72 Q30 62 28 52" fill="none" stroke="#5c3518" stroke-linecap="round" stroke-width="2"/>
+        <ellipse cx="14" cy="136" rx="22" ry="14" fill="#2e6e24" opacity="0.9"/>
+        <ellipse cx="8" cy="128" rx="16" ry="10" fill="#3a8a2e"/>
+        <ellipse cx="20" cy="122" rx="14" ry="9" fill="#4aa83a"/>
+        <ellipse cx="34" cy="34" rx="18" ry="12" fill="#2e6e24"/>
+        <ellipse cx="28" cy="26" rx="13" ry="8" fill="#3a8a2e"/>
+        <ellipse cx="38" cy="20" rx="11" ry="8" fill="#4aa83a"/>
+        <ellipse cx="12" cy="52" rx="16" ry="10" fill="#2e6e24"/>
+        <ellipse cx="8" cy="44" rx="11" ry="8" fill="#3a8a2e"/>
+        <ellipse cx="78" cy="46" rx="16" ry="11" fill="#2e6e24"/>
+        <ellipse cx="72" cy="38" rx="12" ry="8" fill="#3a8a2e"/>
+        <ellipse cx="106" cy="26" rx="18" ry="12" fill="#2e6e24"/>
+        <ellipse cx="112" cy="18" rx="14" ry="9" fill="#3a8a2e"/>
+        <ellipse cx="104" cy="14" rx="10" ry="7" fill="#4aa83a"/>
+        <ellipse cx="32" cy="62" rx="12" ry="8" fill="#3a8a2e" opacity="0.8"/>
+        <ellipse cx="168" cy="10" rx="18" ry="12" fill="#2e6e24"/>
+        <ellipse cx="162" cy="4" rx="12" ry="8" fill="#3a8a2e"/>
+        <ellipse cx="174" cy="2" rx="10" ry="7" fill="#4aa83a"/>
+        <ellipse cx="198" cy="8" rx="17" ry="11" fill="#2e6e24"/>
+        <ellipse cx="204" cy="2" rx="12" ry="8" fill="#3a8a2e"/>
+        <ellipse cx="194" cy="4" rx="10" ry="7" fill="#4aa83a"/>
+        <ellipse cx="154" cy="14" rx="12" ry="8" fill="#3a8a2e"/>
+        <ellipse cx="216" cy="16" rx="12" ry="8" fill="#3a8a2e"/>
+        <ellipse cx="330" cy="26" rx="18" ry="12" fill="#2e6e24"/>
+        <ellipse cx="336" cy="18" rx="13" ry="8" fill="#3a8a2e"/>
+        <ellipse cx="326" cy="16" rx="10" ry="7" fill="#4aa83a"/>
+        <ellipse cx="318" cy="52" rx="15" ry="10" fill="#2e6e24"/>
+        <ellipse cx="322" cy="44" rx="11" ry="8" fill="#3a8a2e"/>
+        <ellipse cx="280" cy="22" rx="16" ry="11" fill="#2e6e24"/>
+        <ellipse cx="276" cy="14" rx="11" ry="8" fill="#3a8a2e"/>
+        <ellipse cx="238" cy="28" rx="15" ry="10" fill="#2e6e24"/>
+        <ellipse cx="234" cy="20" rx="11" ry="7" fill="#3a8a2e"/>
+        <ellipse cx="96" cy="96" rx="14" ry="9" fill="#2e6e24" opacity="0.7"/>
+        <ellipse cx="244" cy="104" rx="13" ry="8" fill="#2e6e24" opacity="0.7"/>
+        <ellipse cx="170" cy="58" rx="12" ry="8" fill="#3a8a2e" opacity="0.7"/>
+        <ellipse cx="196" cy="52" rx="11" ry="7" fill="#3a8a2e" opacity="0.7"/>
+        <ellipse cx="50" cy="116" rx="18" ry="11" fill="#2e6e24" opacity="0.85"/>
+        <ellipse cx="44" cy="108" rx="13" ry="8" fill="#3a8a2e"/>
+        <ellipse cx="82" cy="122" rx="16" ry="10" fill="#2e6e24" opacity="0.85"/>
+        <ellipse cx="76" cy="114" rx="12" ry="8" fill="#3a8a2e"/>
+        <ellipse cx="26" cy="128" rx="14" ry="9" fill="#2e6e24" opacity="0.8"/>
+        <ellipse cx="24" cy="68" rx="13" ry="8" fill="#2e6e24" opacity="0.8"/>
+        <ellipse cx="54" cy="82" rx="14" ry="9" fill="#3a8a2e" opacity="0.8"/>
+        <ellipse cx="46" cy="50" rx="13" ry="8" fill="#2e6e24" opacity="0.8"/>
+        <ellipse cx="182" cy="34" rx="16" ry="10" fill="#3a8a2e" opacity="0.85"/>
+        <ellipse cx="186" cy="24" rx="12" ry="8" fill="#4aa83a" opacity="0.8"/>
+        <ellipse cx="144" cy="28" rx="13" ry="8" fill="#2e6e24" opacity="0.75"/>
+        <ellipse cx="226" cy="26" rx="13" ry="8" fill="#2e6e24" opacity="0.75"/>
+        <ellipse cx="260" cy="90" rx="16" ry="10" fill="#2e6e24" opacity="0.8"/>
+        <ellipse cx="256" cy="80" rx="12" ry="8" fill="#3a8a2e" opacity="0.8"/>
+        <ellipse cx="302" cy="76" rx="15" ry="9" fill="#2e6e24" opacity="0.8"/>
+        <ellipse cx="298" cy="66" rx="11" ry="7" fill="#3a8a2e" opacity="0.8"/>
+        <ellipse cx="340" cy="40" rx="13" ry="8" fill="#2e6e24" opacity="0.8"/>
+        <ellipse cx="258" cy="46" rx="13" ry="8" fill="#3a8a2e" opacity="0.8"/>
+        <ellipse cx="130" cy="108" rx="18" ry="12" fill="#2e6e24" opacity="0.7"/>
+        <ellipse cx="126" cy="98" rx="13" ry="8" fill="#3a8a2e" opacity="0.7"/>
+        <ellipse cx="220" cy="102" rx="16" ry="10" fill="#2e6e24" opacity="0.7"/>
+        <ellipse cx="216" cy="92" rx="12" ry="8" fill="#3a8a2e" opacity="0.7"/>
+        <ellipse cx="176" cy="82" rx="14" ry="9" fill="#3a8a2e" opacity="0.65"/>
+        <ellipse cx="200" cy="78" rx="13" ry="8" fill="#3a8a2e" opacity="0.65"/>
       </svg>
       <h1>SJCC SCORING</h1>
     </div>
     <div class="section-label">Select Game</div>
     <div class="game-card" id="home-wolf"><div class="game-card-icon">🐺</div><div class="game-card-text"><h3>Wolf</h3><p>Hole-by-hole team gambling game</p></div></div>
     <div class="game-card" id="home-ns"><div class="game-card-icon">⛳</div><div class="game-card-text"><h3>Nassau + Skins</h3><p>Scorecard-based betting games</p></div></div>
+    <div class="game-card" id="home-9pt"><div class="game-card-icon">🎯</div><div class="game-card-text"><h3>9 Point Game</h3><p>3-player (9pt) or 4-player (16pt) points game</p></div></div>
     ${state.wolfSaved ? `<button class="big-btn ghost" id="resume-wolf">Resume Wolf Round</button>` : ''}
     ${state.nsSaved   ? `<button class="big-btn ghost" id="resume-ns">Resume Nassau/Skins Round</button>` : ''}
+    ${state.ptSaved   ? `<button class="big-btn ghost" id="resume-9pt">Resume 9 Point Round</button>` : ''}
   </div>`;
 }
 
@@ -1277,13 +1272,17 @@ function attachEvents() {
   if (s === 'wolf-game')  attachWolfGameEvents();
   if (s === 'ns-setup')   attachNSSetupEvents();
   if (s === 'ns-game')    attachNSGameEvents();
+  if (s === '9pt-setup')  attach9ptSetupEvents();
+  if (s === '9pt-game')   attach9ptGameEvents();
 }
 
 function attachHomeEvents() {
   document.getElementById('home-wolf')?.addEventListener('click', () => { state.screen = 'wolf-setup'; render(); });
   document.getElementById('home-ns')?.addEventListener('click',   () => { state.screen = 'ns-setup';   render(); });
+  document.getElementById('home-9pt')?.addEventListener('click',  () => { state.screen = '9pt-setup';  render(); });
   document.getElementById('resume-wolf')?.addEventListener('click', () => { state.screen = 'wolf-game'; render(); });
   document.getElementById('resume-ns')?.addEventListener('click',   () => { state.screen = 'ns-game';   render(); });
+  document.getElementById('resume-9pt')?.addEventListener('click',  () => { state.screen = '9pt-game';  render(); });
 }
 
 function attachWolfSetupEvents() {
@@ -1628,6 +1627,517 @@ function checkAutoPress(holeIdx) {
   }
 }
 
+
+// ═══════════════════════════════════════════
+// 9 POINT GAME — SCORING ENGINE
+// ═══════════════════════════════════════════
+
+function compute9ptHole(netScores, blitz) {
+  // netScores: { playerName: netScore }
+  const players = Object.keys(netScores);
+  const n = players.length; // 3 or 4
+  const total = n === 3 ? 9 : 16;
+  const scores = players.map(p => ({ name: p, net: netScores[p] }));
+  scores.sort((a, b) => a.net - b.net);
+
+  // Blitz check: winner by 2+ net strokes over everyone
+  if (blitz && n >= 3) {
+    const best = scores[0].net;
+    const second = scores[1].net;
+    if (second - best >= 2) {
+      const pts = {};
+      players.forEach(p => pts[p] = 0);
+      pts[scores[0].name] = total;
+      return { pts, blitz: true };
+    }
+  }
+
+  const pts = {};
+  players.forEach(p => pts[p] = 0);
+
+  if (n === 3) {
+    const [a, b, c] = scores;
+    if (a.net === b.net && b.net === c.net) {
+      // 3-way tie: 3-3-3
+      scores.forEach(s => pts[s.name] = 3);
+    } else if (a.net === b.net) {
+      // Tie 1st: 4-4-1
+      pts[a.name] = 4; pts[b.name] = 4; pts[c.name] = 1;
+    } else if (b.net === c.net) {
+      // Tie 2nd: 5-2-2
+      pts[a.name] = 5; pts[b.name] = 2; pts[c.name] = 2;
+    } else {
+      // No tie: 5-3-1
+      pts[a.name] = 5; pts[b.name] = 3; pts[c.name] = 1;
+    }
+  } else if (n === 4) {
+    const [a, b, c, d] = scores;
+    const s = [a.net, b.net, c.net, d.net];
+    if (s[0]===s[1] && s[1]===s[2] && s[2]===s[3]) {
+      // 4-way tie: 4-4-4-4
+      scores.forEach(s => pts[s.name] = 4);
+    } else if (s[0]===s[1] && s[1]===s[2]) {
+      // 3-way tie 1st: 5-5-5-1
+      pts[a.name]=5; pts[b.name]=5; pts[c.name]=5; pts[d.name]=1;
+    } else if (s[1]===s[2] && s[2]===s[3]) {
+      // 1st, 3-way tie 2nd: 7-3-3-3
+      pts[a.name]=7; pts[b.name]=3; pts[c.name]=3; pts[d.name]=3;
+    } else if (s[0]===s[1] && s[2]===s[3]) {
+      // 2-way tie 1st, 2-way tie 3rd: 6-6-2-2
+      pts[a.name]=6; pts[b.name]=6; pts[c.name]=2; pts[d.name]=2;
+    } else if (s[0]===s[1]) {
+      // 2-way tie 1st: 6-6-3-1
+      pts[a.name]=6; pts[b.name]=6; pts[c.name]=3; pts[d.name]=1;
+    } else if (s[1]===s[2]) {
+      // Tie 2nd: 7-4-4-1
+      pts[a.name]=7; pts[b.name]=4; pts[c.name]=4; pts[d.name]=1;
+    } else if (s[2]===s[3]) {
+      // Tie 3rd: 7-5-2-2
+      pts[a.name]=7; pts[b.name]=5; pts[c.name]=2; pts[d.name]=2;
+    } else {
+      // No tie: 7-5-3-1
+      pts[a.name]=7; pts[b.name]=5; pts[c.name]=3; pts[d.name]=1;
+    }
+  }
+  return { pts, blitz: false };
+}
+
+function compute9ptTotals() {
+  const pg = state.ptGame;
+  const ps = state.ptSetup;
+  const totals = {};
+  ps.players.forEach(p => totals[p.name] = 0);
+  (pg.holes || []).forEach(h => {
+    if (!h.pts) return;
+    ps.players.forEach(p => { totals[p.name] += (h.pts[p.name] || 0); });
+  });
+  return totals;
+}
+
+function compute9ptLedger() {
+  const totals = compute9ptTotals();
+  const ps = state.ptSetup;
+  const vpp = ps.vpp || 1;
+  const players = ps.players.map(p => p.name);
+  const ledger = []; // { from, to, amount }
+  for (let i = 0; i < players.length; i++) {
+    for (let j = i + 1; j < players.length; j++) {
+      const a = players[i], b = players[j];
+      const diff = (totals[a] - totals[b]) * vpp;
+      if (diff > 0) ledger.push({ from: b, to: a, amount: diff });
+      else if (diff < 0) ledger.push({ from: a, to: b, amount: Math.abs(diff) });
+    }
+  }
+  return ledger;
+}
+
+// ── 9PT SETUP ──
+function render9ptSetup() {
+  const ps = state.ptSetup || {
+    players: [{name:'',hcp:0},{name:'',hcp:0},{name:'',hcp:0}],
+    hcpPct: 100, blitz: false, vpp: 1
+  };
+  state.ptSetup = ps;
+  const isValid = ps.players.length === 3 || ps.players.length === 4;
+  const gameLabel = ps.players.length === 4 ? '16 Point Game' : '9 Point Game';
+
+  const playerRows = ps.players.map((p, i) => {
+    const canRemove = ps.players.length === 4 && i === 3;
+    return `<div class="player-setup-row">
+      <span class="player-idx">${i+1}</span>
+      <input class="text-input pt-pname" data-idx="${i}" placeholder="Player ${i+1}" value="${p.name}" autocomplete="off"/>
+      <input class="num-input pt-hcp" data-idx="${i}" placeholder="Hcp" value="${p.hcp}" type="number" min="0" max="54"/>
+      ${canRemove ? `<button class="remove-btn" data-pt-remove="${i}">✕</button>` : ''}
+    </div>`;
+  }).join('');
+
+  return `<div class="top-bar"><span class="top-bar-title">🎯 9 POINT GAME</span><button class="back-btn" id="go-home">Home</button></div>
+  <div class="screen">
+    <div class="section-label">Players (3 or 4)</div>
+    <div class="card">${playerRows}
+      ${ps.players.length === 3 ? `<button class="add-btn" id="pt-add-player">+ Add 4th Player (→ ${gameLabel.replace('9','16')})</button>` : ''}
+    </div>
+    <div class="section-label">Handicap %</div>
+    <div class="card"><div class="field-row"><span class="field-label">% of handicap used</span>
+      <input class="num-input" id="pt-hcp-pct" value="${ps.hcpPct}" min="0" max="100" type="number"/>
+    </div></div>
+    <div class="section-label">Game Settings</div>
+    <div class="card">
+      <div class="field-row"><span class="field-label">Value per point ($)</span>
+        <input class="num-input" id="pt-vpp" value="${ps.vpp}" min="1" type="number"/>
+      </div>
+      <div class="toggle-row" style="margin-top:12px">
+        <div>
+          <span class="toggle-label">Blitz Rule</span>
+          <div style="font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:var(--muted);margin-top:2px">Win by 2+ net strokes → all points</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="pt-blitz" ${ps.blitz?'checked':''}/>
+        <span class="toggle-slider"></span></label>
+      </div>
+    </div>
+    <div class="card" style="background:var(--surface2);text-align:center">
+      <div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:0.1em">${gameLabel}</div>
+      <div style="font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:var(--muted);margin-top:4px">${ps.players.length} players · $${ps.vpp}/pt · ${ps.hcpPct}% hcp${ps.blitz?' · Blitz on':''}</div>
+    </div>
+    <button class="big-btn green" id="pt-start" ${isValid?'':'disabled'}>Start Round →</button>
+  </div>`;
+}
+
+// ── 9PT GAME ──
+function render9ptGame() {
+  const tab = state.ptGame.tab || 'scorecard';
+  const ps = state.ptSetup;
+  const n = ps.players.length;
+  const gameLabel = n === 4 ? '16 PT' : '9 PT';
+
+  return `<div class="top-bar"><span class="top-bar-title">🎯 ${gameLabel} GAME</span>
+    <div style="display:flex;gap:6px">
+      <button class="back-btn" id="pt-end-round" style="color:var(--red-text);border-color:var(--red)">End</button>
+      <button class="back-btn" id="go-home">Home</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab ${tab==='scorecard'?'active':''}" data-pt-tab="scorecard">Scorecard</button>
+    <button class="tab ${tab==='leaderboard'?'active':''}" data-pt-tab="leaderboard">Leaderboard</button>
+    <button class="tab ${tab==='summary'?'active':''}" data-pt-tab="summary">Summary</button>
+  </div>
+  <div class="tab-content">
+    ${tab==='scorecard'  ? render9ptScorecard()  : ''}
+    ${tab==='leaderboard'? render9ptLeaderboard() : ''}
+    ${tab==='summary'    ? render9ptSummary()     : ''}
+  </div>`;
+}
+
+function render9ptScorecard() {
+  const pg = state.ptGame;
+  const ps = state.ptSetup;
+  const hi = pg.currentHole;
+  const hole = SJCC.holes[hi];
+  const n = ps.players.length;
+  const total = n === 3 ? 9 : 16;
+
+  // Compute current hole points if all scored
+  const holeScores = pg.scores || {};
+  const allScored = ps.players.every(p => holeScores[p.name] && holeScores[p.name][hi] != null);
+  let holeResult = null;
+  if (allScored) {
+    const netScores = {};
+    ps.players.forEach(p => {
+      const g = holeScores[p.name][hi];
+      const strokes = strokesOnHole(p.hcp, hole.hcp, ps.hcpPct);
+      netScores[p.name] = g - strokes;
+    });
+    holeResult = compute9ptHole(netScores, ps.blitz);
+  }
+
+  const scoreRows = ps.players.map(p => {
+    const gross = (holeScores[p.name] || {})[hi];
+    const strokes = strokesOnHole(p.hcp, hole.hcp, ps.hcpPct);
+    const hasScore = gross != null;
+    const net = hasScore ? gross - strokes : null;
+    const slabel = hasScore ? scoreLabel(gross, hole.par) : '';
+    const pts = holeResult ? holeResult.pts[p.name] : null;
+
+    return `<div class="score-row">
+      <div style="flex:1">
+        <div class="score-player-name">${p.name}</div>
+        <div style="display:flex;gap:6px;margin-top:2px">
+          <span class="score-player-hcp">Hcp ${p.hcp}</span>
+          ${strokes > 0 ? `<span class="score-stroke-badge">+${strokes} stroke${strokes>1?'s':''}</span>` : ''}
+          ${pts != null ? `<span style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;color:var(--gold-bright);background:var(--gold-dim);border-radius:4px;padding:1px 7px">${pts} pts</span>` : ''}
+        </div>
+      </div>
+      <div class="score-adj">
+        <button class="sc-btn" data-pt-sc-down="${p.name}">−</button>
+        <div class="sc-val ${slabel}">${hasScore ? gross : '–'}</div>
+        <button class="sc-btn" data-pt-sc-up="${p.name}">+</button>
+      </div>
+      <div class="sc-net">${net != null ? `net ${net}` : ''}</div>
+    </div>`;
+  }).join('');
+
+  // Points validation display
+  let validBox = '';
+  if (holeResult) {
+    const ptSum = Object.values(holeResult.pts).reduce((a,b)=>a+b,0);
+    const label = holeResult.blitz ? `⚡ BLITZ — ${ps.players.find(p=>holeResult.pts[p.name]===total)?.name} wins all ${total} pts` : `${ptSum} pts distributed`;
+    validBox = `<div class="hole-result-box" style="margin-bottom:10px">
+      <div class="hole-result-row"><span class="label">Hole ${hole.num} result</span>
+        <span style="color:${ptSum===total?'var(--green-text)':'var(--red-text)'};font-family:IBM Plex Mono,monospace;font-size:0.78rem">${label}</span>
+      </div>
+    </div>`;
+  }
+
+  return `<div>
+    <div class="hole-nav">
+      <div>
+        <div class="hole-nav-title">Hole ${hole.num}</div>
+        <div class="hole-nav-sub">${SJCC.name}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="back-btn" id="pt-prev" ${hi>0?'':'disabled'}>← Prev</button>
+        <button class="back-btn" id="pt-next" ${hi<17?'':'disabled'}>Next →</button>
+      </div>
+    </div>
+    <div class="hole-meta">
+      <div class="hole-meta-item">Par <span>${hole.par}</span></div>
+      <div class="hole-meta-item">Yds <span>${hole.yds}</span></div>
+      <div class="hole-meta-item">Hcp <span>${hole.hcp}</span></div>
+      <div class="hole-meta-item">Pts <span>${total}</span></div>
+    </div>
+    <div class="score-entry">${scoreRows}</div>
+    ${validBox}
+    ${hi < 17
+      ? `<button class="big-btn gold" id="pt-confirm-hole">Confirm Hole ${hole.num} →</button>`
+      : `<button class="big-btn green" id="pt-finish-round">Finish Round ✓</button>`
+    }
+  </div>`;
+}
+
+function render9ptLeaderboard() {
+  const pg = state.ptGame;
+  const ps = state.ptSetup;
+  const holesPlayed = (pg.holes || []).length;
+  if (holesPlayed === 0) return `<div style="text-align:center;color:var(--muted);padding:40px 0">Complete a hole to see standings</div>`;
+
+  const totals = compute9ptTotals();
+  const n = ps.players.length;
+  const totalPossible = (n === 3 ? 9 : 16) * holesPlayed;
+  const sorted = [...ps.players].sort((a,b) => totals[b.name] - totals[a.name]);
+
+  return `<div>
+    <div class="stat-strip">
+      <div class="stat-item"><div class="stat-val">${holesPlayed}</div><div class="stat-lbl">Holes</div></div>
+      <div class="stat-item"><div class="stat-val">${n===3?9:16}</div><div class="stat-lbl">Pts/Hole</div></div>
+      <div class="stat-item"><div class="stat-val">$${ps.vpp}</div><div class="stat-lbl">Per Pt</div></div>
+    </div>
+    ${sorted.map((p, i) => {
+      const pts = totals[p.name];
+      const net = (pts - (totalPossible / n)) * ps.vpp;
+      const cls = net > 0 ? 'pos' : net < 0 ? 'neg' : 'zero';
+      const sign = net > 0 ? '+' : '';
+      return `<div class="lb-row ${i===0?'leader':''}">
+        <span class="lb-rank ${i===0?'gold':''}">${i===0?'★':i+1}</span>
+        <span class="lb-name">${p.name}</span>
+        <span class="lb-detail">${pts} pts</span>
+        <span class="lb-val ${cls}">${sign}$${fmt(Math.abs(net))}</span>
+      </div>`;
+    }).join('')}
+    ${render9ptHoleLog(pg.holes||[], ps.players, n)}
+  </div>`;
+}
+
+function render9ptHoleLog(holes, players, n) {
+  if (holes.length === 0) return '';
+  const rows = holes.map(h => {
+    const sorted = players.slice().sort((a,b) => (h.pts[b.name]||0) - (h.pts[a.name]||0));
+    const ptsLine = sorted.map(p => {
+      const pts = h.pts[p.name] || 0;
+      const color = pts >= (n===3?5:7) ? 'var(--green-text)' : pts <= 1 ? 'var(--red-text)' : 'var(--white)';
+      return '<span style="font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:'+color+'">'+p.name+' <strong>'+pts+'</strong></span>';
+    }).join('<span style="color:var(--border);margin:0 4px">·</span>');
+    const blitzBadge = h.blitz ? '<span style="font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:var(--gold-bright);background:var(--gold-dim);border-radius:4px;padding:1px 6px">⚡ Blitz</span>' : '';
+    return '<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px">'
+      + '<span style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold);min-width:52px">H'+h.num+'</span>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:8px;flex:1">'+ptsLine+'</div>'
+      + blitzBadge
+      + '</div>';
+  }).join('');
+  return '<div class="card" style="margin-top:12px">'
+    + '<div style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;color:var(--gold);letter-spacing:0.08em;margin-bottom:8px">Hole by Hole</div>'
+    + rows + '</div>';
+}
+
+function render9ptSummary() {
+  const ps = state.ptSetup;
+  const pg = state.ptGame;
+  const n = ps.players.length;
+  const total = n === 3 ? 9 : 16;
+  const holesPlayed = (pg.holes || []).length;
+  const totals = compute9ptTotals();
+  const ledger = compute9ptLedger();
+  const sorted = [...ps.players].sort((a,b) => totals[b.name] - totals[a.name]);
+
+  const ptRows = sorted.map((p, i) => {
+    const pts = totals[p.name];
+    const netDollar = ledger.filter(l=>l.to===p.name).reduce((s,l)=>s+l.amount,0)
+                    - ledger.filter(l=>l.from===p.name).reduce((s,l)=>s+l.amount,0);
+    const cls = netDollar > 0 ? 'pos' : netDollar < 0 ? 'neg' : 'zero';
+    const sign = netDollar > 0 ? '+' : '';
+    return `<div class="lb-row">
+      <span class="lb-rank ${i===0?'gold':''}">${i===0?'★':i+1}</span>
+      <div style="flex:1;margin-left:8px">
+        <div class="lb-name">${p.name}</div>
+        <div style="font-family:IBM Plex Mono,monospace;font-size:0.7rem;color:var(--muted)">${pts} pts total</div>
+      </div>
+      <span class="lb-val ${cls}" style="font-size:1.5rem">${sign}$${fmt(Math.abs(netDollar))}</span>
+    </div>`;
+  }).join('');
+
+  const ledgerRows = ledger.length > 0
+    ? ledger.map(l => `<div class="hole-result-row">
+        <span style="color:var(--red-text);font-family:IBM Plex Mono,monospace;font-size:0.82rem">${l.from}</span>
+        <span style="color:var(--muted);font-family:IBM Plex Mono,monospace;font-size:0.72rem">owes</span>
+        <span style="color:var(--green-text);font-family:IBM Plex Mono,monospace;font-size:0.82rem">${l.to}</span>
+        <span style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--white)">$${fmt(l.amount)}</span>
+      </div>`).join('')
+    : `<div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:10px">All square</div>`;
+
+  // Scorecard table
+  const holeHeaders = SJCC.holes.slice(0,holesPlayed).map(h=>
+    `<th style="font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:var(--muted);padding:3px 5px;text-align:center;font-weight:400">${h.num}</th>`
+  ).join('');
+
+  const scorecardRows = ps.players.map(p => {
+    let ptTotal = 0;
+    const cells = SJCC.holes.slice(0,holesPlayed).map((hole,hi) => {
+      const holeData = (pg.holes||[])[hi];
+      const pts = holeData && holeData.pts ? (holeData.pts[p.name]||0) : null;
+      if (pts != null) ptTotal += pts;
+      const color = pts == null ? 'var(--muted)' : pts >= (n===3?5:7) ? 'var(--green-text)' : pts <= (n===3?1:1) ? 'var(--red-text)' : 'var(--white)';
+      return `<td style="color:${color};font-family:IBM Plex Mono,monospace;font-size:0.7rem;padding:3px 5px;text-align:center">${pts != null ? pts : '–'}${holeData&&holeData.blitz&&holeData.blitzWinner===p.name?'⚡':''}</td>`;
+    }).join('');
+    return `<tr>
+      <td style="font-weight:600;font-size:0.82rem;padding:5px 8px;white-space:nowrap">${p.name}</td>
+      ${cells}
+      <td style="font-family:Bebas Neue,sans-serif;font-size:1rem;padding:3px 8px;text-align:center;color:var(--gold-bright);border-left:1px solid var(--border)">${ptTotal}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div>
+    <div class="stat-strip">
+      <div class="stat-item"><div class="stat-val">${holesPlayed}</div><div class="stat-lbl">Holes</div></div>
+      <div class="stat-item"><div class="stat-val">${holesPlayed*total}</div><div class="stat-lbl">Total Pts</div></div>
+      <div class="stat-item"><div class="stat-val">$${ps.vpp}</div><div class="stat-lbl">Per Pt</div></div>
+    </div>
+    <div class="lb-card"><div class="lb-card-header">Final Standings</div>${ptRows}</div>
+    <div class="lb-card"><div class="lb-card-header">💰 Who Owes Who</div>
+      <div style="padding:10px 14px">${ledgerRows}</div>
+    </div>
+    <div class="card" style="overflow-x:auto;padding:10px">
+      <div style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:8px">Points by Hole</div>
+      <table style="border-collapse:collapse;width:100%">
+        <thead><tr>
+          <th style="font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:var(--muted);padding:3px 8px;text-align:left;font-weight:400">Player</th>
+          ${holeHeaders}
+          <th style="font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:var(--gold);padding:3px 8px;text-align:center;border-left:1px solid var(--border);font-weight:400">Tot</th>
+        </tr></thead>
+        <tbody>${scorecardRows}</tbody>
+      </table>
+    </div>
+    <button class="big-btn green" id="pt-new-round">New Round</button>
+    <button class="big-btn ghost" id="pt-back-to-game">← Back to Round</button>
+  </div>`;
+}
+
+// ── 9PT SETUP EVENTS ──
+function attach9ptSetupEvents() {
+  const ps = state.ptSetup;
+  document.querySelectorAll('.pt-pname').forEach(inp => {
+    inp.addEventListener('input', e => { ps.players[parseInt(e.target.dataset.idx)].name = e.target.value; });
+    inp.addEventListener('blur', () => render());
+  });
+  document.querySelectorAll('.pt-hcp').forEach(inp => {
+    inp.addEventListener('input', e => { ps.players[parseInt(e.target.dataset.idx)].hcp = parseFloat(e.target.value)||0; });
+  });
+  document.querySelector('[data-pt-remove]')?.addEventListener('click', e => {
+    ps.players.splice(parseInt(e.target.dataset.ptRemove), 1); render();
+  });
+  document.getElementById('pt-add-player')?.addEventListener('click', () => { ps.players.push({name:'',hcp:0}); render(); });
+  document.getElementById('pt-hcp-pct')?.addEventListener('input', e => { ps.hcpPct = parseFloat(e.target.value)||100; render(); });
+  document.getElementById('pt-vpp')?.addEventListener('input', e => { ps.vpp = parseFloat(e.target.value)||1; render(); });
+  document.getElementById('pt-blitz')?.addEventListener('change', e => { ps.blitz = e.target.checked; render(); });
+
+  document.getElementById('pt-start')?.addEventListener('click', () => {
+    ps.players = ps.players.map((p,i) => ({...p, name: p.name.trim()||`Player ${i+1}`}));
+    const scores = {};
+    ps.players.forEach(p => { scores[p.name] = {}; });
+    state.ptGame = { tab: 'scorecard', currentHole: 0, scores, holes: [] };
+    state.ptSaved = true;
+    state.screen = '9pt-game';
+    render();
+  });
+}
+
+// ── 9PT GAME EVENTS ──
+function attach9ptGameEvents() {
+  const pg = state.ptGame;
+  const ps = state.ptSetup;
+
+  document.querySelectorAll('[data-pt-tab]').forEach(t => {
+    t.addEventListener('click', e => { pg.tab = e.target.dataset.ptTab; render(); });
+  });
+  document.getElementById('pt-end-round')?.addEventListener('click', () => { state.ptSaved=false; state.screen='home'; render(); });
+  document.getElementById('pt-prev')?.addEventListener('click', () => { if(pg.currentHole>0){pg.currentHole--; render();} });
+  document.getElementById('pt-next')?.addEventListener('click', () => { if(pg.currentHole<17){pg.currentHole++; render();} });
+
+  // Score adjusters
+  document.querySelectorAll('[data-pt-sc-up]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const p = e.target.dataset.ptScUp;
+      const hi = pg.currentHole;
+      if (!pg.scores[p]) pg.scores[p] = {};
+      const par = SJCC.holes[hi].par;
+      pg.scores[p][hi] = (pg.scores[p][hi] != null ? pg.scores[p][hi] : par - 1) + 1;
+      render();
+    });
+  });
+  document.querySelectorAll('[data-pt-sc-down]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const p = e.target.dataset.ptScDown;
+      const hi = pg.currentHole;
+      if (!pg.scores[p]) pg.scores[p] = {};
+      const par = SJCC.holes[hi].par;
+      const cur = pg.scores[p][hi] != null ? pg.scores[p][hi] : par + 1;
+      pg.scores[p][hi] = Math.max(1, cur - 1);
+      render();
+    });
+  });
+
+  // Confirm hole — lock scores and compute points
+  document.getElementById('pt-confirm-hole')?.addEventListener('click', () => {
+    const hi = pg.currentHole;
+    const hole = SJCC.holes[hi];
+    const allScored = ps.players.every(p => pg.scores[p.name] && pg.scores[p.name][hi] != null);
+    if (!allScored) { showToast('Enter scores for all players first'); return; }
+
+    const netScores = {};
+    ps.players.forEach(p => {
+      const g = pg.scores[p.name][hi];
+      const strokes = strokesOnHole(p.hcp, hole.hcp, ps.hcpPct);
+      netScores[p.name] = g - strokes;
+    });
+    const result = compute9ptHole(netScores, ps.blitz);
+    const blitzWinner = result.blitz ? Object.keys(result.pts).find(p => result.pts[p] === (ps.players.length===3?9:16)) : null;
+
+    pg.holes[hi] = { num: hole.num, pts: result.pts, blitz: result.blitz, blitzWinner };
+    pg.currentHole++;
+    render();
+  });
+
+  // Finish round
+  document.getElementById('pt-finish-round')?.addEventListener('click', () => {
+    const hi = pg.currentHole;
+    const hole = SJCC.holes[hi];
+    const allScored = ps.players.every(p => pg.scores[p.name] && pg.scores[p.name][hi] != null);
+    if (allScored) {
+      const netScores = {};
+      ps.players.forEach(p => {
+        const g = pg.scores[p.name][hi];
+        const strokes = strokesOnHole(p.hcp, hole.hcp, ps.hcpPct);
+        netScores[p.name] = g - strokes;
+      });
+      const result = compute9ptHole(netScores, ps.blitz);
+      const blitzWinner = result.blitz ? Object.keys(result.pts).find(p => result.pts[p] === (ps.players.length===3?9:16)) : null;
+      pg.holes[hi] = { num: hole.num, pts: result.pts, blitz: result.blitz, blitzWinner };
+    }
+    pg.tab = 'summary';
+    render();
+  });
+
+  document.getElementById('pt-new-round')?.addEventListener('click', () => { state.screen='9pt-setup'; state.ptSaved=false; render(); });
+  document.getElementById('pt-back-to-game')?.addEventListener('click', () => { pg.tab='scorecard'; render(); });
+}
 // ── BOOT ──
 render();
 
