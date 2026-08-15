@@ -258,6 +258,31 @@ if (!state.ptSaved) state.ptSaved = false;
 if (!state.ssSaved) state.ssSaved = false;
 if (!state.jksSaved) state.jksSaved = false;
 
+// Migrate saves from older app versions.
+if (state.wolfGame) {
+  const wg = state.wolfGame;
+  // Pre-snapshot rounds lack wg.players; reading live setup state instead
+  // miscounts money if the setup roster was edited since. Rebuild the roster
+  // from the money ledger itself (union of every name that appears).
+  if (!wg.players) {
+    const names = new Set(state.wolf?.players || []);
+    (wg.holes || []).forEach(h => Object.keys(h.results || {}).forEach(n => names.add(n)));
+    Object.keys(wg.holeInput?.statuses || {}).forEach(n => names.add(n));
+    wg.players = [...names];
+  }
+  // A save captured mid-edit before editInput existed would wedge the modal.
+  if (wg.editingHole != null && !wg.editInput) {
+    const h = (wg.holes || [])[wg.editingHole];
+    if (h) wg.editInput = { bet: h.bet, statuses: { ...h.statuses } };
+    else wg.editingHole = null;
+  }
+}
+
+// Player names land in HTML attributes (data-wolf-player="...") and as
+// object keys — quotes and angle brackets silently detach a player from
+// their money. Strip them at the door.
+function cleanName(raw) { return (raw || '').replace(/[<>"&]/g, '').trim(); }
+
 // Inject transition overlay once
 (function() {
   const overlay = document.createElement('div');
@@ -873,7 +898,7 @@ function renderWolfPrev() {
     return `<div class="card" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--gold)">Hole ${h.num}</span>
-        <span style="font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:var(--muted)">$${h.bet}/player</span>
+        <span style="font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:var(--muted)">$${h.bet} hole</span>
         <button class="back-btn" data-wolf-edit="${i}">Edit</button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">${chips}</div>
@@ -1459,7 +1484,7 @@ function attachWolfSetupEvents() {
   document.getElementById('wolf-default-bet')?.addEventListener('input', e => { state.wolf.defaultBet = Math.max(1, numOr(e.target.value, 5)); saveState(); });
   document.getElementById('wolf-start')?.addEventListener('click', () => {
     if (state.wolfSaved && !confirm('Start a new round? Your saved Wolf round will be discarded.')) return;
-    state.wolf.players = state.wolf.players.map((p,i)=>p.trim()||`Player ${i+1}`);
+    state.wolf.players = state.wolf.players.map((p,i)=>cleanName(p)||`Player ${i+1}`);
     const lower = state.wolf.players.map(p => p.toLowerCase());
     if (new Set(lower).size !== lower.length) { alert('Player names must be unique — results are tracked by name.'); return; }
     state.wolfGame = {
@@ -1481,6 +1506,7 @@ function attachWolfGameEvents() {
     t.addEventListener('click', e => { wg.tab = e.target.dataset.wolfTab; render(); });
   });
   document.getElementById('wolf-end-round')?.addEventListener('click', () => {
+    if (!confirm('End this round? It will no longer be resumable.')) return;
     state.wolfSaved = false; state.screen = 'home'; render();
   });
 
@@ -1507,6 +1533,14 @@ function attachWolfGameEvents() {
   document.getElementById('wolf-confirm-hole')?.addEventListener('click', () => {
     if (!confirmGuard()) return;
     const hi = wg.holeInput;
+    // One-sided entries (winners but no losers, or vice versa) move $0 —
+    // usually a scorer who forgot to tag the other side. Warn, don't block.
+    const nW = wolfPlayers.filter(p => hi.statuses[p] === 'winner').length;
+    const nL = wolfPlayers.filter(p => hi.statuses[p] === 'loser').length;
+    if ((nW > 0) !== (nL > 0)) {
+      const side = nW > 0 ? 'losers' : 'winners';
+      if (!confirm(`No ${side} marked — this hole moves $0. Confirm anyway?`)) return;
+    }
     const results = wolfHoleResult(hi.bet, hi.statuses, wolfPlayers);
     wg.holes.push({ num: wg.currentHole, bet: hi.bet, statuses: {...hi.statuses}, results });
     wg.currentHole++;
@@ -1609,7 +1643,7 @@ function attachNSSetupEvents() {
   document.getElementById('ns-start')?.addEventListener('click', () => {
     // Validate
     if (state.nsSaved && !confirm('Start a new round? Your saved Nassau/Skins round will be discarded.')) return;
-    ns.players = ns.players.map((p,i)=>({...p, name:p.name.trim()||`Player ${i+1}`}));
+    ns.players = ns.players.map((p,i)=>({...p, name:cleanName(p.name)||`Player ${i+1}`}));
     const lower = ns.players.map(p => p.name.toLowerCase());
     if (new Set(lower).size !== lower.length) { alert('Player names must be unique — scores are tracked by name.'); return; }
     if (!ns.nassau && !ns.skins) { alert('Enable Nassau, Skins, or both.'); return; }
@@ -1643,7 +1677,7 @@ function attachNSGameEvents() {
   document.querySelectorAll('[data-ns-tab]').forEach(t => {
     t.addEventListener('click', e => { ng.tab = e.target.dataset.nsTab; render(); });
   });
-  document.getElementById('ns-end-round')?.addEventListener('click', () => { state.nsSaved=false; state.screen='home'; render(); });
+  document.getElementById('ns-end-round')?.addEventListener('click', () => { if (!confirm('End this round? It will no longer be resumable.')) return; state.nsSaved=false; state.screen='home'; render(); });
   document.getElementById('sc-prev')?.addEventListener('click', () => { if(ng.currentHole>0){ng.currentHole--; render();} });
   document.getElementById('sc-next')?.addEventListener('click', () => {
     if (ng.currentHole < 17) { ng.currentHole++; render(); }
@@ -2254,7 +2288,7 @@ function attach9ptSetupEvents() {
 
   document.getElementById('pt-start')?.addEventListener('click', () => {
     if (state.ptSaved && !confirm('Start a new round? Your saved points-game round will be discarded.')) return;
-    ps.players = ps.players.map((p,i) => ({...p, name: p.name.trim()||`Player ${i+1}`}));
+    ps.players = ps.players.map((p,i) => ({...p, name: cleanName(p.name)||`Player ${i+1}`}));
     const lower = ps.players.map(p => p.name.toLowerCase());
     if (new Set(lower).size !== lower.length) { alert('Player names must be unique — points are tracked by name.'); return; }
     const scores = {};
@@ -2274,7 +2308,7 @@ function attach9ptGameEvents() {
   document.querySelectorAll('[data-pt-tab]').forEach(t => {
     t.addEventListener('click', e => { pg.tab = e.target.dataset.ptTab; render(); });
   });
-  document.getElementById('pt-end-round')?.addEventListener('click', () => { state.ptSaved=false; state.screen='home'; render(); });
+  document.getElementById('pt-end-round')?.addEventListener('click', () => { if (!confirm('End this round? It will no longer be resumable.')) return; state.ptSaved=false; state.screen='home'; render(); });
   document.getElementById('pt-prev')?.addEventListener('click', () => { if(pg.currentHole>0){pg.currentHole--; render();} });
   document.getElementById('pt-next')?.addEventListener('click', () => { if(pg.currentHole<17){pg.currentHole++; render();} });
 
@@ -2783,7 +2817,7 @@ function attachSSSetupEvents() {
   });
   document.getElementById('ss-start')?.addEventListener('click', () => {
     if (state.ssSaved && !confirm('Start a new round? Your saved Skins Only round will be discarded.')) return;
-    ss.players = ss.players.map((p,i)=>({...p, name:p.name.trim()||'Player '+(i+1)}));
+    ss.players = ss.players.map((p,i)=>({...p, name:cleanName(p.name)||'Player '+(i+1)}));
     const lower = ss.players.map(p => p.name.toLowerCase());
     if (new Set(lower).size !== lower.length) { alert('Player names must be unique — skins are tracked by name.'); return; }
     const scores = {};
@@ -2803,7 +2837,7 @@ function attachSSGameEvents() {
   document.querySelectorAll('[data-ss-tab]').forEach(t => {
     t.addEventListener('click', e => { sg.tab=e.target.dataset.ssTab; render(); });
   });
-  document.getElementById('ss-end-round')?.addEventListener('click', () => { state.ssSaved=false; state.screen='home'; render(); });
+  document.getElementById('ss-end-round')?.addEventListener('click', () => { if (!confirm('End this round? It will no longer be resumable.')) return; state.ssSaved=false; state.screen='home'; render(); });
   document.getElementById('ss-prev')?.addEventListener('click', () => { if(sg.currentHole>0){sg.currentHole--; render();} });
   document.getElementById('ss-next')?.addEventListener('click', () => { if(sg.currentHole<17){sg.currentHole++; render();} });
 
@@ -3123,7 +3157,7 @@ function attachJKSSetupEvents() {
   document.getElementById('jks-hcp-pct')?.addEventListener('input', e => { jks.hcpPct = Math.max(0, Math.min(100, numOr(e.target.value, 100))); saveState(); });
   document.getElementById('jks-start')?.addEventListener('click', () => {
     if (state.jksSaved && !confirm('Start a new round? Your saved scorecard round will be discarded.')) return;
-    jks.players = jks.players.map((p,i) => ({...p, name: p.name.trim()||'Player '+(i+1)}));
+    jks.players = jks.players.map((p,i) => ({...p, name: cleanName(p.name)||'Player '+(i+1)}));
     const lower = jks.players.map(p => p.name.toLowerCase());
     if (new Set(lower).size !== lower.length) { alert('Player names must be unique — scores are tracked by name.'); return; }
     const scores = {};
@@ -3143,7 +3177,7 @@ function attachJKSGameEvents() {
   document.querySelectorAll('[data-jks-tab]').forEach(t => {
     t.addEventListener('click', e => { jg.tab = e.target.dataset.jksTab; render(); });
   });
-  document.getElementById('jks-end-round')?.addEventListener('click', () => { state.jksSaved=false; state.screen='home'; render(); });
+  document.getElementById('jks-end-round')?.addEventListener('click', () => { if (!confirm('End this round? It will no longer be resumable.')) return; state.jksSaved=false; state.screen='home'; render(); });
   document.getElementById('jks-prev')?.addEventListener('click', () => { if(jg.currentHole>0){jg.currentHole--; render();} });
   document.getElementById('jks-next')?.addEventListener('click', () => { if(jg.currentHole<17){jg.currentHole++; render();} });
 

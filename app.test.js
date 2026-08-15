@@ -221,6 +221,60 @@ test('REGRESSION: Wolf Previous Holes chips carry a minus sign on losses', () =>
   assert.ok(app.appHTML().includes('B: −$5'), 'loss chip shows −$5');
 });
 
+test('LEGACY: pre-snapshot wolf save gets its roster rebuilt from the money ledger', () => {
+  // Old-schema round (no wolfGame.players) whose setup roster was renamed since:
+  // the roster must come from the ledger itself, never live setup state.
+  const legacy = JSON.stringify({
+    screen: 'wolf-game', players: [], scores: {},
+    wolf: { players: ['Robert', 'Carl'], defaultBet: 5 },   // Bob renamed after saving
+    wolfGame: { tab: 'leaderboard', currentHole: 2, editingHole: null,
+                holes: [{ num: 1, bet: 5, statuses: { Josh: 'winner', Bob: 'loser' },
+                          results: { Josh: 5, Bob: -5 } }],
+                holeInput: { bet: 5, statuses: { Josh: 'push', Bob: 'push' } } },
+    wolfSaved: true
+  });
+  const app = makeApp({ storage: { tbd_scoring_v2: legacy } });
+  const roster = app.run('state.wolfGame.players');
+  assert.ok(roster.includes('Josh') && roster.includes('Bob'), 'ledger names recovered');
+  const totals = app.run('wolfTotals()');
+  assert.equal(totals.Josh + totals.Bob, 0, 'no orphaned money');
+  assert.equal(totals.Bob, -5, "Bob's loss still counted");
+});
+
+test('LEGACY: save captured mid-edit without editInput gets a working modal buffer', () => {
+  const legacy = JSON.stringify({
+    screen: 'wolf-game', players: [], scores: {},
+    wolf: { players: ['A', 'B'], defaultBet: 5 },
+    wolfGame: { tab: 'prev', currentHole: 2, editingHole: 0,
+                holes: [{ num: 1, bet: 7, statuses: { A: 'winner', B: 'loser' }, results: { A: 7, B: -7 } }],
+                holeInput: { bet: 5, statuses: { A: 'push', B: 'push' } } },
+    wolfSaved: true
+  });
+  const app = makeApp({ storage: { tbd_scoring_v2: legacy } });
+  assert.deepEqual(app.run('state.wolfGame.editInput'),
+    { bet: 7, statuses: { A: 'winner', B: 'loser' } });
+});
+
+test('cleanName strips characters that detach a player from their money', () => {
+  const app = makeApp();
+  assert.equal(app.run(`cleanName('5\\'10" Dave')`), "5'10 Dave");
+  assert.equal(app.run(`cleanName('<b>Bob</b>')`), 'bBob/b');
+  assert.equal(app.run(`cleanName('  Al  ')`), 'Al');
+  assert.equal(app.run(`cleanName(null)`), '');
+});
+
+test('TRIPWIRE: every Confirm/Finish handler calls confirmGuard; every End confirms', () => {
+  // The harness can't tap buttons, so pin the call sites statically —
+  // deleting a guard from a handler must fail the suite, not just tests of
+  // the guard function itself.
+  const guards = html.match(/if \(!confirmGuard\(\)\) return;/g) || [];
+  assert.equal(guards.length, 7, 'wolf/ns confirm+finish, pt confirm+finish, ss, jks confirms');
+  const ends = html.match(/End this round\? It will no longer be resumable\./g) || [];
+  assert.equal(ends.length, 5, 'all five End buttons confirm before orphaning a round');
+  const discards = html.match(/will be discarded\./g) || [];
+  assert.equal(discards.length, 5, 'all five Start buttons confirm before overwriting a save');
+});
+
 /* ---------------- mobile invariants (each one has bitten on a real phone) ---------------- */
 
 test('mobile invariants: meta tags, touch handling, safe areas, thumb targets', () => {
