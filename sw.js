@@ -1,7 +1,8 @@
-const CACHE_NAME = 'sjcc-scoring-v1';
+const CACHE_NAME = 'sjcc-scoring-v2';
+// Relative to the SW's scope — works at any mount path (local dev or GitHub Pages)
 const ASSETS = [
-  '/wolf-tracker/',
-  '/wolf-tracker/index.html',
+  './',
+  './index.html',
 ];
 
 // Install — cache core assets

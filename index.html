@@ -2,11 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>SJCC Test Scoring App</title>
+<meta name="theme-color" content="#0d1117" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -21,26 +24,27 @@
 }
 html, body { height: 100%; background: var(--bg); color: var(--white); font-family: 'IBM Plex Sans', sans-serif; overflow: hidden; }
 .app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; max-width: 480px; margin: 0 auto; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 /* ── SHARED ── */
-.screen { flex: 1; overflow-y: auto; padding: 20px 16px 40px; }
-.top-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.screen { flex: 1; overflow-y: auto; padding: 20px 16px calc(40px + env(safe-area-inset-bottom, 0px)); }
+.top-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 .top-bar-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; color: var(--gold-bright); }
 .back-btn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; padding: 5px 10px; cursor: pointer; touch-action: manipulation; }
 .back-btn:hover { border-color: var(--gold); color: var(--gold); }
 .tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; overflow-x: auto; }
 .tab { flex: 1; min-width: 70px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 10px 4px; cursor: pointer; white-space: nowrap; touch-action: manipulation; }
 .tab.active { color: var(--gold-bright); border-bottom-color: var(--gold-bright); }
-.tab-content { flex: 1; overflow-y: auto; padding: 16px; }
+.tab-content { flex: 1; overflow-y: auto; padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
 .section-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); margin-bottom: 8px; margin-top: 16px; }
 .section-label:first-child { margin-top: 0; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
 .field-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .field-row:last-child { margin-bottom: 0; }
 .field-label { color: var(--muted); font-size: 0.85rem; flex: 1; }
-.text-input { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; color: var(--white); font-family: 'IBM Plex Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.15s; width: 100%; }
+.text-input { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; color: var(--white); font-family: 'IBM Plex Sans', sans-serif; font-size: 1rem; outline: none; transition: border-color 0.15s; width: 100%; }
 .text-input:focus { border-color: var(--gold); }
-.num-input { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; color: var(--white); font-family: 'IBM Plex Mono', monospace; font-size: 0.9rem; outline: none; width: 70px; text-align: right; -moz-appearance: textfield; }
+.num-input { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; color: var(--white); font-family: 'IBM Plex Mono', monospace; font-size: 1rem; outline: none; width: 74px; text-align: right; -moz-appearance: textfield; }
 .num-input::-webkit-outer-spin-button, .num-input::-webkit-inner-spin-button { -webkit-appearance: none; }
 .num-input:focus { border-color: var(--gold); }
 .toggle-row { display: flex; align-items: center; justify-content: space-between; }
@@ -76,7 +80,8 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .home-logo h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; letter-spacing: 0.12em; color: var(--gold-bright); line-height: 1; }
 .home-logo p { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 6px; }
 .game-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 16px; touch-action: manipulation; }
-.game-card:hover, .game-card:active { border-color: var(--gold); background: var(--surface2); }
+@media (hover: hover) { .game-card:hover { border-color: var(--gold); background: var(--surface2); } }
+.game-card:active { border-color: var(--gold); background: var(--surface2); transform: scale(0.99); }
 .game-card-icon { font-size: 2rem; width: 48px; text-align: center; flex-shrink: 0; }
 .game-card-text h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.1em; color: var(--white); }
 .game-card-text p { color: var(--muted); font-size: 0.78rem; margin-top: 3px; }
@@ -111,7 +116,8 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .score-player-hcp { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); }
 .score-stroke-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--gold-bright); background: var(--gold-dim); border-radius: 4px; padding: 1px 5px; }
 .score-adj { display: flex; align-items: center; gap: 6px; }
-.sc-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; color: var(--white); width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; touch-action: manipulation; }
+.sc-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; color: var(--white); width: 42px; height: 42px; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; touch-action: manipulation; }
+.sc-btn:active { background: var(--border); }
 .sc-btn:hover { border-color: var(--gold); }
 .sc-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--white); min-width: 32px; text-align: center; }
 .sc-val.eagle { color: #f0e68c; }
@@ -158,7 +164,7 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .stat-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 
 /* ── TRANSITION OVERLAY ── */
-.oak-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; pointer-events: none; opacity: 0; transition: opacity 0.28s ease; }
+.oak-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; }
 .oak-overlay.visible { opacity: 1; pointer-events: all; }
 .oak-overlay-title { font-family: Bebas Neue,sans-serif; font-size: 1.1rem; letter-spacing: 0.14em; color: var(--gold-bright); }
 .oak-overlay-dots { display: flex; gap: 5px; margin-top: 4px; }
@@ -186,13 +192,14 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .wolf-preview .ml.r { color: var(--red-text); }
 .bet-adjuster { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; }
 .bet-adj-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; }
-.adj-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--white); width: 28px; height: 28px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
+.adj-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--white); width: 36px; height: 36px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
+.adj-btn:active { background: var(--border); }
 .adj-btn:hover { border-color: var(--gold); }
 .bet-dinput { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--gold-bright); background: none; border: none; border-bottom: 1px solid var(--gold); width: 52px; text-align: center; outline: none; -moz-appearance: textfield; }
 .bet-dinput::-webkit-outer-spin-button, .bet-dinput::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 /* ── TOAST ── */
-.toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; color: var(--gold-bright); font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; padding: 10px 20px; z-index: 200; white-space: nowrap; animation: toast-in 0.2s ease; pointer-events: none; }
+.toast { position: fixed; bottom: calc(32px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; color: var(--gold-bright); font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; padding: 10px 20px; z-index: 600; white-space: nowrap; animation: toast-in 0.2s ease; pointer-events: none; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; }
 @keyframes toast-in { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 </style>
 </head>
@@ -237,7 +244,11 @@ function loadState() {
     return JSON.parse(localStorage.getItem(SK)) || null;
   } catch { return null; }
 }
-function saveState() { localStorage.setItem(SK, JSON.stringify(state)); }
+function saveState() { try { localStorage.setItem(SK, JSON.stringify(state)); } catch {} }
+
+// Parse a numeric input value; empty/garbage falls back, but 0 and negatives parse as-is
+// (don't use `parseFloat(v)||d` — it silently turns a typed 0 into the default)
+function numOr(v, d) { const n = parseFloat(v); return Number.isFinite(n) ? n : d; }
 
 let state = loadState() || { screen: 'home' };
 // Ensure critical objects always exist
@@ -316,10 +327,9 @@ if (!state.jksSaved) state.jksSaved = false;
 function strokesOnHole(playerHcp, holeHcp, hcpPct = 100) {
   const adjHcp = Math.round(playerHcp * hcpPct / 100);
   if (adjHcp <= 0) return 0;
-  if (adjHcp >= 18) {
-    return adjHcp >= 18 + holeHcp ? 2 : 1;
-  }
-  return holeHcp <= adjHcp ? 1 : 0;
+  // Standard allocation: every full 18 strokes gives 1 on all holes; the
+  // remainder goes to the lowest stroke-index holes (handles hcp > 36 too)
+  return Math.floor(adjHcp / 18) + (holeHcp <= adjHcp % 18 ? 1 : 0);
 }
 
 function netScore(gross, playerHcp, holeHcp, hcpPct = 100) {
@@ -346,7 +356,7 @@ function computeNassauState(ns) {
   if (!state.scores) state.scores = {};
   const ng = state.nsGame || {};
   ns.presses = ng.presses || [];
-  const { teamA, teamB, format, hcpPct } = ns;
+  const { teamA, teamB, nassauFormat: format, hcpPct } = ns;
   const result = { front: null, back: null, overall: null, presses: [] };
 
   function bestBallHole(team, holeIdx) {
@@ -466,17 +476,22 @@ function computeSkinsState(ss) {
     } else if (skinType === 'canadian') {
       // Gross birdie or better always beats net birdie
       // Best gross score wins; tiebreaker is net
-      const minGross = Math.min(...holeScores.map(s => s.gross));
       const par = hole.par;
       const grossBirdieOrBetter = holeScores.filter(s => s.gross <= par - 1);
 
       if (grossBirdieOrBetter.length === 1) {
         winner = grossBirdieOrBetter[0].name;
       } else if (grossBirdieOrBetter.length > 1) {
-        // Tiebreaker: net
-        const minNet = Math.min(...grossBirdieOrBetter.map(s => s.net));
-        const netWinners = grossBirdieOrBetter.filter(s => s.net === minNet);
-        winner = netWinners.length === 1 ? netWinners[0].name : null; // push if still tied
+        // Best gross among them wins outright; net only breaks a gross tie
+        const minGross = Math.min(...grossBirdieOrBetter.map(s => s.gross));
+        const grossWinners = grossBirdieOrBetter.filter(s => s.gross === minGross);
+        if (grossWinners.length === 1) {
+          winner = grossWinners[0].name;
+        } else {
+          const minNet = Math.min(...grossWinners.map(s => s.net));
+          const netWinners = grossWinners.filter(s => s.net === minNet);
+          winner = netWinners.length === 1 ? netWinners[0].name : null; // push if still tied
+        }
       } else {
         // No gross birdie — best net wins
         const minNet = Math.min(...holeScores.map(s => s.net));
@@ -555,14 +570,15 @@ function render(skipTransition) {
     // Fade overlay in
     overlay.classList.add('visible');
     setTimeout(() => {
-      // Render new screen behind overlay
-      doRender();
-      // Hold briefly then fade out
-      setTimeout(() => {
-        overlay.classList.remove('visible');
-        setTimeout(() => { _transitioning = false; }, 300);
-      }, 900);
-    }, 280);
+      // Render new screen behind overlay; even if it throws, the overlay
+      // must come back down or the app is bricked behind it
+      try { doRender(); } finally {
+        setTimeout(() => {
+          overlay.classList.remove('visible');
+          setTimeout(() => { _transitioning = false; }, 250);
+        }, 400);
+      }
+    }, 200);
   } else {
     doRender();
     _prevScreen = s;
@@ -768,7 +784,14 @@ function renderWolfGame() {
 function renderWolfPlay() {
   const wg = state.wolfGame;
   const hi = wg.holeInput;
-  const players = state.wolf.players;
+  const players = wg.players || state.wolf.players;
+  if (wg.currentHole > 18) {
+    return `<div style="text-align:center;padding:40px 0">
+      <div style="font-size:2.5rem;margin-bottom:10px">🏁</div>
+      <div style="font-family:Bebas Neue,sans-serif;font-size:1.6rem;letter-spacing:0.08em;color:var(--gold-bright);margin-bottom:6px">Round Complete</div>
+      <div style="color:var(--muted);font-size:0.85rem">All 18 holes logged — check the Leaderboard for final standings,<br/>or edit any hole from Previous Holes.</div>
+    </div>`;
+  }
   const winners = players.filter(p => hi.statuses[p] === 'winner');
   const losers  = players.filter(p => hi.statuses[p] === 'loser');
   const pot = losers.length * hi.bet;
@@ -808,10 +831,10 @@ function renderWolfLeaderboard() {
   const wg = state.wolfGame;
   const totals = wolfTotals();
   if (wg.holes.length === 0) return `<div style="text-align:center;color:var(--muted);padding:40px 0">Complete a hole to see standings</div>`;
-  return [...state.wolf.players].sort((a,b)=>totals[b]-totals[a]).map((p,i) => {
+  return [...(wg.players || state.wolf.players)].sort((a,b)=>totals[b]-totals[a]).map((p,i) => {
     const net = totals[p];
     const cls = net>0?'pos':net<0?'neg':'zero';
-    const sign = net>0?'+':'';
+    const sign = net>0?'+':net<0?'−':'';
     const wins   = wg.holes.filter(h=>h.results[p]>0).length;
     const losses = wg.holes.filter(h=>h.results[p]<0).length;
     return `<div class="lb-row" style="${i===0?'border-color:var(--gold)':''}">
@@ -826,10 +849,11 @@ function renderWolfLeaderboard() {
 function renderWolfPrev() {
   const wg = state.wolfGame;
   if (wg.holes.length === 0) return `<div style="text-align:center;color:var(--muted);padding:40px 0">No holes logged yet</div>`;
+  const wolfPlayers = wg.players || state.wolf.players;
   return [...wg.holes].reverse().map((h, ri) => {
     const i = wg.holes.length - 1 - ri;
-    const chips = state.wolf.players.map(p => `<span class="chip ${h.statuses[p]}">${p}</span>`).join(' ');
-    const results = state.wolf.players.map(p => {
+    const chips = wolfPlayers.map(p => `<span class="chip ${h.statuses[p]}">${p}</span>`).join(' ');
+    const results = wolfPlayers.map(p => {
       const d = h.results[p];
       if (d===0) return '';
       return `<span class="chip ${d>0?'green':'red'}">${p}: ${d>0?'+':''}$${fmt(Math.abs(d))}</span>`;
@@ -848,11 +872,11 @@ function renderWolfPrev() {
 
 function renderWolfEditModal() {
   const wg = state.wolfGame;
-  const hi = wg.holeInput;
-  const cards = state.wolf.players.map(p => {
-    const st = hi.statuses[p] || 'push';
+  const ei = wg.editInput || wg.holeInput;
+  const cards = (wg.players || state.wolf.players).map(p => {
+    const st = ei.statuses[p] || 'push';
     const label = st==='winner'?'WIN':st==='loser'?'LOSS':'PUSH';
-    return `<div class="wolf-player-card ${st}" data-wolf-player="${p}" style="margin-bottom:8px">
+    return `<div class="wolf-player-card ${st}" data-wolf-edit-player="${p}" style="margin-bottom:8px">
       <span class="pname">${p}</span><span class="wolf-status-badge">${label}</span>
     </div>`;
   }).join('');
@@ -862,9 +886,9 @@ function renderWolfEditModal() {
       <div class="bet-adjuster" style="margin-bottom:14px;display:inline-flex">
         <div><div class="bet-adj-label">Bet</div>
         <div style="display:flex;align-items:center;gap:2px"><span style="font-family:Bebas Neue,sans-serif;font-size:1.3rem;color:var(--gold-bright)">$</span>
-        <input class="bet-dinput" id="wolf-bet-input" type="number" min="1" value="${hi.bet}"/></div></div>
-        <button class="adj-btn" id="wolf-bet-down">−</button>
-        <button class="adj-btn" id="wolf-bet-up">+</button>
+        <input class="bet-dinput" id="wolf-edit-bet-input" type="number" min="1" value="${ei.bet}"/></div></div>
+        <button class="adj-btn" id="wolf-edit-bet-down">−</button>
+        <button class="adj-btn" id="wolf-edit-bet-up">+</button>
       </div>
       <div>${cards}</div>
       <div style="display:flex;gap:10px;margin-top:14px">
@@ -876,10 +900,11 @@ function renderWolfEditModal() {
 }
 
 function wolfTotals() {
+  const players = state.wolfGame.players || state.wolf.players;
   const totals = {};
-  state.wolf.players.forEach(p => totals[p] = 0);
+  players.forEach(p => totals[p] = 0);
   (state.wolfGame.holes || []).forEach(h => {
-    state.wolf.players.forEach(p => { totals[p] += (h.results[p] || 0); });
+    players.forEach(p => { totals[p] += (h.results[p] || 0); });
   });
   return totals;
 }
@@ -918,6 +943,10 @@ function renderNSSetup() {
     carryover: false,
   };
   state.nsSetup = ns;
+  // Teams are tracked by player INDEX in setup (names may still be typed in);
+  // ns-start converts to final names. Migrate old name-based saves once.
+  if (!ns.teamAIdx) ns.teamAIdx = (ns.teamA || []).map(n => ns.players.findIndex(p => p.name === n)).filter(i => i >= 0);
+  if (!ns.teamBIdx) ns.teamBIdx = (ns.teamB || []).map(n => ns.players.findIndex(p => p.name === n)).filter(i => i >= 0);
 
   const playerRows = ns.players.map((p, i) => {
     const canRemove = i >= 4 && ns.players.length > 4;
@@ -934,13 +963,13 @@ function renderNSSetup() {
   if (ns.nassau && ns.players.length >= 2) {
     teamRows = ns.players.map((p, i) => {
       const name = p.name || `Player ${i+1}`;
-      const inA = ns.teamA.includes(name);
-      const inB = ns.teamB.includes(name);
+      const inA = ns.teamAIdx.includes(i);
+      const inB = ns.teamBIdx.includes(i);
       return `<div class="field-row">
         <span class="field-label">${name}</span>
         <div class="team-select">
-          <button class="team-btn ${inA?'selected-a':''}" data-team="A" data-player="${name}">Team A</button>
-          <button class="team-btn ${inB?'selected-b':''}" data-team="B" data-player="${name}">Team B</button>
+          <button class="team-btn ${inA?'selected-a':''}" data-team="A" data-player-idx="${i}">Team A</button>
+          <button class="team-btn ${inB?'selected-b':''}" data-team="B" data-player-idx="${i}">Team B</button>
         </div>
       </div>`;
     }).join('');
@@ -1139,7 +1168,7 @@ function renderNSNassau() {
     return `<div class="nassau-row">
       <div style="flex:1">
         <div style="font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:var(--white)">${label}</div>
-        <div style="font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:var(--muted)">${match.holesPlayed} holes played · $${bet}</div>
+        <div style="font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:var(--muted)">${match.holesPlayed} hole${match.holesPlayed===1?'':'s'} played · $${bet}</div>
         ${extra}
       </div>
       <span style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:${statusColor(match.diff)}">${match.status}</span>
@@ -1203,7 +1232,7 @@ function renderNSSkins() {
   const lbRows = sorted.map((p, i) => {
     const net = totals[p.name];
     const cls = net>0?'pos':net<0?'neg':'zero';
-    const sign = net>0?'+':'';
+    const sign = net>0?'+':net<0?'−':'';
     const won = skinsState.filter(s=>s.winner===p.name).length;
     return `<div class="lb-row ${i===0&&net>0?'':''}">
       <span class="lb-rank ${i===0&&net>0?'gold':''}">${i===0&&net>0?'★':i+1}</span>
@@ -1290,7 +1319,7 @@ function renderNSSummary() {
   const moneyRows = sorted.map((p, i) => {
     const net = totals[p.name];
     const cls = net>0?'pos':net<0?'neg':'zero';
-    const sign = net>0?'+':'';
+    const sign = net>0?'+':net<0?'−':'';
     // Breakdown
     let skinsAmt = 0, nassauAmt = 0;
     if (ns.skins) {
@@ -1299,8 +1328,8 @@ function renderNSSummary() {
     }
     nassauAmt = net - skinsAmt;
     const breakdown = [
-      ns.nassau ? `Nassau: ${nassauAmt>=0?'+':''}$${fmt(Math.abs(nassauAmt))}` : '',
-      ns.skins  ? `Skins: ${skinsAmt>=0?'+':''}$${fmt(Math.abs(skinsAmt))}` : ''
+      ns.nassau ? `Nassau: ${nassauAmt>0?'+':nassauAmt<0?'−':''}$${fmt(Math.abs(nassauAmt))}` : '',
+      ns.skins  ? `Skins: ${skinsAmt>0?'+':skinsAmt<0?'−':''}$${fmt(Math.abs(skinsAmt))}` : ''
     ].filter(Boolean).join(' · ');
     return `<div class="lb-row">
       <span class="lb-rank ${i===0?'gold':''}">${i===0?'★':i+1}</span>
@@ -1403,18 +1432,22 @@ function attachHomeEvents() {
 
 function attachWolfSetupEvents() {
   document.querySelectorAll('.wolf-pname').forEach(inp => {
-    inp.addEventListener('input', e => { state.wolf.players[parseInt(e.target.dataset.idx)] = e.target.value; });
+    inp.addEventListener('input', e => { state.wolf.players[parseInt(e.target.dataset.idx)] = e.target.value; saveState(); });
     inp.addEventListener('blur', () => render());
   });
   document.querySelectorAll('[data-wolf-remove]').forEach(btn => {
     btn.addEventListener('click', e => { state.wolf.players.splice(parseInt(e.target.dataset.wolfRemove),1); render(); });
   });
   document.getElementById('wolf-add-player')?.addEventListener('click', () => { state.wolf.players.push(''); render(); });
-  document.getElementById('wolf-default-bet')?.addEventListener('input', e => { state.wolf.defaultBet = parseFloat(e.target.value)||5; });
+  document.getElementById('wolf-default-bet')?.addEventListener('input', e => { state.wolf.defaultBet = Math.max(1, numOr(e.target.value, 5)); saveState(); });
   document.getElementById('wolf-start')?.addEventListener('click', () => {
     state.wolf.players = state.wolf.players.map((p,i)=>p.trim()||`Player ${i+1}`);
+    const lower = state.wolf.players.map(p => p.toLowerCase());
+    if (new Set(lower).size !== lower.length) { alert('Player names must be unique — results are tracked by name.'); return; }
     state.wolfGame = {
       tab: 'play', holes: [], currentHole: 1, editingHole: null,
+      // Snapshot the roster — editing setup mid-round must not corrupt name-keyed results
+      players: [...state.wolf.players],
       holeInput: { bet: state.wolf.defaultBet, statuses: {} }
     };
     state.wolf.players.forEach(p => state.wolfGame.holeInput.statuses[p] = 'push');
@@ -1452,46 +1485,54 @@ function attachWolfGameEvents() {
   });
 
   // Confirm
+  const wolfPlayers = wg.players || state.wolf.players;
   document.getElementById('wolf-confirm-hole')?.addEventListener('click', () => {
     const hi = wg.holeInput;
-    const results = wolfHoleResult(hi.bet, hi.statuses, state.wolf.players);
+    const results = wolfHoleResult(hi.bet, hi.statuses, wolfPlayers);
     wg.holes.push({ num: wg.currentHole, bet: hi.bet, statuses: {...hi.statuses}, results });
     wg.currentHole++;
     wg.holeInput = { bet: state.wolf.defaultBet, statuses: {} };
-    state.wolf.players.forEach(p => wg.holeInput.statuses[p] = 'push');
+    wolfPlayers.forEach(p => wg.holeInput.statuses[p] = 'push');
+    if (wg.currentHole > 18) { wg.tab = 'leaderboard'; showToast('Round complete — 18 holes logged'); }
     render();
   });
 
-  // Prev holes edit
+  // Prev holes edit — uses its own buffer so the in-progress hole entry survives
   document.querySelectorAll('[data-wolf-edit]').forEach(btn => {
     btn.addEventListener('click', e => {
       const idx = parseInt(e.target.dataset.wolfEdit);
       wg.editingHole = idx;
       const h = wg.holes[idx];
-      wg.holeInput = { bet: h.bet, statuses: {...h.statuses} };
+      wg.editInput = { bet: h.bet, statuses: {...h.statuses} };
       render();
     });
   });
 
   // Modal
   if (wg.editingHole != null) {
-    document.getElementById('wolf-modal-cancel')?.addEventListener('click', () => {
-      wg.editingHole = null;
-      wg.holeInput = { bet: state.wolf.defaultBet, statuses: {} };
-      state.wolf.players.forEach(p => wg.holeInput.statuses[p] = 'push');
-      render();
-    });
+    const closeModal = () => { wg.editingHole = null; wg.editInput = null; render(); };
+    document.getElementById('wolf-modal-cancel')?.addEventListener('click', closeModal);
     document.getElementById('wolf-modal-overlay')?.addEventListener('click', e => {
-      if (e.target.id==='wolf-modal-overlay') {
-        wg.editingHole=null; wg.holeInput={bet:state.wolf.defaultBet,statuses:{}};
-        state.wolf.players.forEach(p=>wg.holeInput.statuses[p]='push'); render();
-      }
+      if (e.target.id==='wolf-modal-overlay') closeModal();
     });
     document.getElementById('wolf-modal-save')?.addEventListener('click', () => {
-      const hi = wg.holeInput;
-      wg.holes[wg.editingHole] = { ...wg.holes[wg.editingHole], bet:hi.bet, statuses:{...hi.statuses}, results:wolfHoleResult(hi.bet,hi.statuses,state.wolf.players) };
-      wg.editingHole=null; wg.holeInput={bet:state.wolf.defaultBet,statuses:{}};
-      state.wolf.players.forEach(p=>wg.holeInput.statuses[p]='push'); render();
+      const ei = wg.editInput;
+      wg.holes[wg.editingHole] = { ...wg.holes[wg.editingHole], bet:ei.bet, statuses:{...ei.statuses}, results:wolfHoleResult(ei.bet,ei.statuses,wolfPlayers) };
+      closeModal();
+    });
+    const editBet = document.getElementById('wolf-edit-bet-input');
+    editBet?.addEventListener('input', e => { const v=parseInt(e.target.value); if(!isNaN(v)&&v>=1) wg.editInput.bet=v; });
+    editBet?.addEventListener('blur', ()=>render());
+    document.getElementById('wolf-edit-bet-up')?.addEventListener('click', ()=>{ wg.editInput.bet=Math.max(1,wg.editInput.bet+1); render(); });
+    document.getElementById('wolf-edit-bet-down')?.addEventListener('click', ()=>{ wg.editInput.bet=Math.max(1,wg.editInput.bet-1); render(); });
+    document.querySelectorAll('[data-wolf-edit-player]').forEach(card => {
+      card.addEventListener('click', () => {
+        const p = card.dataset.wolfEditPlayer;
+        const cur = wg.editInput.statuses[p] || 'push';
+        const cycle = { push:'winner', winner:'loser', loser:'push' };
+        wg.editInput.statuses[p] = cycle[cur];
+        render();
+      });
     });
   }
 }
@@ -1499,42 +1540,48 @@ function attachWolfGameEvents() {
 function attachNSSetupEvents() {
   const ns = state.nsSetup;
   document.querySelectorAll('.ns-pname').forEach(inp => {
-    inp.addEventListener('input', e => { ns.players[parseInt(e.target.dataset.idx)].name = e.target.value; });
+    inp.addEventListener('input', e => { ns.players[parseInt(e.target.dataset.idx)].name = e.target.value; saveState(); });
     inp.addEventListener('blur', () => render());
   });
   document.querySelectorAll('.ns-hcp').forEach(inp => {
-    inp.addEventListener('input', e => { ns.players[parseInt(e.target.dataset.idx)].hcp = parseFloat(e.target.value)||0; });
+    inp.addEventListener('input', e => { ns.players[parseInt(e.target.dataset.idx)].hcp = numOr(e.target.value, 0); saveState(); });
   });
   document.querySelectorAll('[data-ns-remove]').forEach(btn => {
-    btn.addEventListener('click', e => { ns.players.splice(parseInt(e.target.dataset.nsRemove),1); render(); });
+    btn.addEventListener('click', e => {
+      const ri = parseInt(e.target.dataset.nsRemove);
+      ns.players.splice(ri, 1);
+      ns.teamAIdx = ns.teamAIdx.filter(i => i !== ri).map(i => i > ri ? i - 1 : i);
+      ns.teamBIdx = ns.teamBIdx.filter(i => i !== ri).map(i => i > ri ? i - 1 : i);
+      render();
+    });
   });
   document.getElementById('ns-add-player')?.addEventListener('click', () => { ns.players.push({name:'',hcp:0}); render(); });
-  document.getElementById('ns-hcp-pct')?.addEventListener('input', e => { ns.hcpPct=parseFloat(e.target.value)||100; });
+  document.getElementById('ns-hcp-pct')?.addEventListener('input', e => { ns.hcpPct = Math.max(0, Math.min(100, numOr(e.target.value, 100))); saveState(); });
   document.getElementById('ns-nassau-toggle')?.addEventListener('change', e => { ns.nassau=e.target.checked; render(); });
   document.getElementById('ns-skins-toggle')?.addEventListener('change', e => { ns.skins=e.target.checked; render(); });
-  document.getElementById('ns-auto-press')?.addEventListener('change', e => { ns.autoPress=e.target.checked; });
+  document.getElementById('ns-auto-press')?.addEventListener('change', e => { ns.autoPress=e.target.checked; saveState(); });
   document.getElementById('ns-carryover')?.addEventListener('change', e => { ns.carryover=e.target.checked; render(); });
-  document.getElementById('ns-bet-front')?.addEventListener('input', e => { ns.betFront=parseFloat(e.target.value)||0; });
-  document.getElementById('ns-bet-back')?.addEventListener('input', e => { ns.betBack=parseFloat(e.target.value)||0; });
-  document.getElementById('ns-bet-total')?.addEventListener('input', e => { ns.betTotal=parseFloat(e.target.value)||0; });
-  document.getElementById('ns-skin-bet')?.addEventListener('input', e => { ns.skinBet=parseFloat(e.target.value)||1; });
+  document.getElementById('ns-bet-front')?.addEventListener('input', e => { ns.betFront=Math.max(0, numOr(e.target.value, 0)); saveState(); });
+  document.getElementById('ns-bet-back')?.addEventListener('input', e => { ns.betBack=Math.max(0, numOr(e.target.value, 0)); saveState(); });
+  document.getElementById('ns-bet-total')?.addEventListener('input', e => { ns.betTotal=Math.max(0, numOr(e.target.value, 0)); saveState(); });
+  document.getElementById('ns-skin-bet')?.addEventListener('input', e => { ns.skinBet=Math.max(0, numOr(e.target.value, 1)); saveState(); });
   document.querySelectorAll('[data-nassau-format]').forEach(btn => {
     btn.addEventListener('click', e => { ns.nassauFormat=e.target.dataset.nassauFormat; render(); });
   });
   document.querySelectorAll('[data-skin-type]').forEach(btn => {
     btn.addEventListener('click', e => { ns.skinType=e.target.dataset.skinType; render(); });
   });
-  // Team assignment
+  // Team assignment — tracked by index so renaming a player never strands a team
   document.querySelectorAll('[data-team]').forEach(btn => {
     btn.addEventListener('click', e => {
       const team = e.target.dataset.team;
-      const player = e.target.dataset.player;
+      const idx = parseInt(e.target.dataset.playerIdx);
       if (team==='A') {
-        ns.teamA = [...new Set([...ns.teamA, player])];
-        ns.teamB = ns.teamB.filter(p=>p!==player);
+        ns.teamAIdx = [...new Set([...ns.teamAIdx, idx])];
+        ns.teamBIdx = ns.teamBIdx.filter(i=>i!==idx);
       } else {
-        ns.teamB = [...new Set([...ns.teamB, player])];
-        ns.teamA = ns.teamA.filter(p=>p!==player);
+        ns.teamBIdx = [...new Set([...ns.teamBIdx, idx])];
+        ns.teamAIdx = ns.teamAIdx.filter(i=>i!==idx);
       }
       render();
     });
@@ -1543,14 +1590,20 @@ function attachNSSetupEvents() {
   document.getElementById('ns-start')?.addEventListener('click', () => {
     // Validate
     ns.players = ns.players.map((p,i)=>({...p, name:p.name.trim()||`Player ${i+1}`}));
+    const lower = ns.players.map(p => p.name.toLowerCase());
+    if (new Set(lower).size !== lower.length) { alert('Player names must be unique — scores are tracked by name.'); return; }
     if (!ns.nassau && !ns.skins) { alert('Enable Nassau, Skins, or both.'); return; }
+    // Resolve team indices to final names now that names are locked in
+    ns.teamA = ns.teamAIdx.filter(i => i < ns.players.length).map(i => ns.players[i].name);
+    ns.teamB = ns.teamBIdx.filter(i => i < ns.players.length).map(i => ns.players[i].name);
     if (ns.nassau && (ns.teamA.length===0||ns.teamB.length===0)) { alert('Assign players to both teams for Nassau.'); return; }
 
     // Init scores object
     const scores = {};
     ns.players.forEach(p => { scores[p.name] = {}; });
 
-    state.players = ns.players;
+    // Deep copy — editing setup mid-round must not mutate the live roster
+    state.players = ns.players.map(p => ({...p}));
     state.scores = scores;
     state.nsGame = {
       tab: 'scorecard',
@@ -1594,7 +1647,9 @@ function attachNSGameEvents() {
       if (!state.scores[p]) state.scores[p] = {};
       const par = SJCC.holes[hi].par;
       const cur = state.scores[p][hi] != null ? state.scores[p][hi] : par + 1;
-      state.scores[p][hi] = Math.max(1, cur - 1);
+      // Tapping − at 1 clears the score entirely (undo a phantom entry)
+      if (cur === 1) delete state.scores[p][hi];
+      else state.scores[p][hi] = cur - 1;
       render();
     });
   });
@@ -1654,14 +1709,22 @@ function attachNSGameEvents() {
     btn.addEventListener('click', e => {
       const idx = parseInt(e.target.dataset.pressIdx);
       const removed = ng.presses.splice(idx, 1)[0];
+      // Remove the whole cascade under it — orphaned children would otherwise
+      // let a fresh root press re-spawn alongside the surviving chain
+      const doomed = new Set([removed.id]);
+      let grew = true;
+      while (grew) {
+        grew = false;
+        ng.presses.forEach(p => {
+          if (p.parentPressId && doomed.has(p.parentPressId) && !doomed.has(p.id)) { doomed.add(p.id); grew = true; }
+        });
+      }
+      ng.presses = ng.presses.filter(p => !doomed.has(p.id));
       ns.presses = ng.presses;
       // Reset hasSpawned on parent if this was an auto press
       if (removed.parentPressId) {
         const parent = ng.presses.find(p => p.id === removed.parentPressId);
         if (parent) parent.hasSpawned = false;
-      } else {
-        // Was a root press — reset root hasSpawned tracking by removing from presses
-        // Root presses are tracked by absence in the array
       }
       render();
       showToast(`Press ${idx+1} removed`);
@@ -1697,7 +1760,7 @@ function checkAutoPress(holeIdx) {
   const origMatch = seg === 'front' ? nr.front : nr.back;
   // Only auto presses with no parentPressId count as "originated from original match"
   const origAutoPressed = ng.presses.some(p => p.segment === seg && p.auto && !p.parentPressId);
-  if (!origAutoPressed && Math.abs(origMatch.diff) >= 2) {
+  if (!origAutoPressed && Math.abs(origMatch.diff) >= 2 && !origMatch.closed) {
     const id = `${Date.now()}-${Math.random()}`;
     ng.presses.push({
       id, parentPressId: null,
@@ -1726,7 +1789,7 @@ function checkAutoPress(holeIdx) {
     const prResult = nr2.presses.find(pr => pr.id === p.id);
     if (!prResult) continue;
 
-    if (Math.abs(prResult.match.diff) >= 2) {
+    if (Math.abs(prResult.match.diff) >= 2 && !prResult.match.closed) {
       const id = `${Date.now()}-${Math.random()}`;
       p.hasSpawned = true;
       ng.presses.push({
@@ -2013,7 +2076,7 @@ function render9ptScorecard() {
 function render9ptLeaderboard() {
   const pg = state.ptGame;
   const ps = state.ptSetup;
-  const holesPlayed = (pg.holes || []).length;
+  const holesPlayed = (pg.holes || []).filter(Boolean).length;
   if (holesPlayed === 0) return `<div style="text-align:center;color:var(--muted);padding:40px 0">Complete a hole to see standings</div>`;
 
   const totals = compute9ptTotals();
@@ -2029,9 +2092,11 @@ function render9ptLeaderboard() {
     </div>
     ${sorted.map((p, i) => {
       const pts = totals[p.name];
-      const net = (pts - (totalPossible / n)) * ps.vpp;
+      // Pairwise settlement: net_i = Σ_j (t_i − t_j)·vpp = n·(t_i − avg)·vpp.
+      // Must match the Summary's ledger, which settles every pair independently.
+      const net = (pts - (totalPossible / n)) * ps.vpp * n;
       const cls = net > 0 ? 'pos' : net < 0 ? 'neg' : 'zero';
-      const sign = net > 0 ? '+' : '';
+      const sign = net > 0 ? '+' : net < 0 ? '−' : '';
       return `<div class="lb-row ${i===0?'leader':''}">
         <span class="lb-rank ${i===0?'gold':''}">${i===0?'★':i+1}</span>
         <span class="lb-name">${p.name}</span>
@@ -2069,7 +2134,7 @@ function render9ptSummary() {
   const pg = state.ptGame;
   const n = ps.players.length;
   const total = n === 3 ? 9 : 16;
-  const holesPlayed = (pg.holes || []).length;
+  const holesPlayed = (pg.holes || []).filter(Boolean).length;
   const totals = compute9ptTotals();
   const ledger = compute9ptLedger();
   const sorted = [...ps.players].sort((a,b) => totals[b.name] - totals[a.name]);
@@ -2079,7 +2144,7 @@ function render9ptSummary() {
     const netDollar = ledger.filter(l=>l.to===p.name).reduce((s,l)=>s+l.amount,0)
                     - ledger.filter(l=>l.from===p.name).reduce((s,l)=>s+l.amount,0);
     const cls = netDollar > 0 ? 'pos' : netDollar < 0 ? 'neg' : 'zero';
-    const sign = netDollar > 0 ? '+' : '';
+    const sign = netDollar > 0 ? '+' : netDollar < 0 ? '−' : '';
     return `<div class="lb-row">
       <span class="lb-rank ${i===0?'gold':''}">${i===0?'★':i+1}</span>
       <div style="flex:1;margin-left:8px">
@@ -2150,22 +2215,25 @@ function render9ptSummary() {
 function attach9ptSetupEvents() {
   const ps = state.ptSetup;
   document.querySelectorAll('.pt-pname').forEach(inp => {
-    inp.addEventListener('input', e => { ps.players[parseInt(e.target.dataset.idx)].name = e.target.value; });
+    inp.addEventListener('input', e => { ps.players[parseInt(e.target.dataset.idx)].name = e.target.value; saveState(); });
     inp.addEventListener('blur', () => render());
   });
   document.querySelectorAll('.pt-hcp').forEach(inp => {
-    inp.addEventListener('input', e => { ps.players[parseInt(e.target.dataset.idx)].hcp = parseFloat(e.target.value)||0; });
+    inp.addEventListener('input', e => { ps.players[parseInt(e.target.dataset.idx)].hcp = numOr(e.target.value, 0); saveState(); });
   });
-  document.querySelector('[data-pt-remove]')?.addEventListener('click', e => {
+  document.querySelectorAll('[data-pt-remove]').forEach(btn => btn.addEventListener('click', e => {
     ps.players.splice(parseInt(e.target.dataset.ptRemove), 1); render();
-  });
+  }));
   document.getElementById('pt-add-player')?.addEventListener('click', () => { ps.players.push({name:'',hcp:0}); render(); });
-  document.getElementById('pt-hcp-pct')?.addEventListener('input', e => { ps.hcpPct = parseFloat(e.target.value)||100; render(); });
-  document.getElementById('pt-vpp')?.addEventListener('input', e => { ps.vpp = parseFloat(e.target.value)||1; render(); });
-  document.getElementById('pt-blitz')?.addEventListener('change', e => { ps.blitz = e.target.checked; render(); });
+  // No render() here — re-rendering on every keystroke destroys the focused input
+  document.getElementById('pt-hcp-pct')?.addEventListener('input', e => { ps.hcpPct = Math.max(0, Math.min(100, numOr(e.target.value, 100))); saveState(); });
+  document.getElementById('pt-vpp')?.addEventListener('input', e => { ps.vpp = Math.max(0, numOr(e.target.value, 1)); saveState(); });
+  document.getElementById('pt-blitz')?.addEventListener('change', e => { ps.blitz = e.target.checked; saveState(); });
 
   document.getElementById('pt-start')?.addEventListener('click', () => {
     ps.players = ps.players.map((p,i) => ({...p, name: p.name.trim()||`Player ${i+1}`}));
+    const lower = ps.players.map(p => p.name.toLowerCase());
+    if (new Set(lower).size !== lower.length) { alert('Player names must be unique — points are tracked by name.'); return; }
     const scores = {};
     ps.players.forEach(p => { scores[p.name] = {}; });
     state.ptGame = { tab: 'scorecard', currentHole: 0, scores, holes: [] };
@@ -2205,7 +2273,8 @@ function attach9ptGameEvents() {
       if (!pg.scores[p]) pg.scores[p] = {};
       const par = SJCC.holes[hi].par;
       const cur = pg.scores[p][hi] != null ? pg.scores[p][hi] : par + 1;
-      pg.scores[p][hi] = Math.max(1, cur - 1);
+      if (cur === 1) delete pg.scores[p][hi];
+      else pg.scores[p][hi] = cur - 1;
       render();
     });
   });
@@ -2295,14 +2364,20 @@ function computeSSSkinsState() {
       if (nw.length === 1) winner = nw[0].name;
     } else if (skinType === 'canadian') {
       const par = hole.par;
-      const minG = Math.min(...holeScores.map(s => s.gross));
       const birdies = holeScores.filter(s => s.gross <= par - 1);
       if (birdies.length === 1) {
         winner = birdies[0].name;
       } else if (birdies.length > 1) {
-        const minNet = Math.min(...birdies.map(s => s.net));
-        const nw = birdies.filter(s => s.net === minNet);
-        winner = nw.length === 1 ? nw[0].name : null;
+        // Best gross among them wins outright; net only breaks a gross tie
+        const minG = Math.min(...birdies.map(s => s.gross));
+        const gw = birdies.filter(s => s.gross === minG);
+        if (gw.length === 1) {
+          winner = gw[0].name;
+        } else {
+          const minNet = Math.min(...gw.map(s => s.net));
+          const nw = gw.filter(s => s.net === minNet);
+          winner = nw.length === 1 ? nw[0].name : null;
+        }
       } else {
         const minNet = Math.min(...holeScores.map(s => s.net));
         const nw = holeScores.filter(s => s.net === minNet);
@@ -2314,7 +2389,7 @@ function computeSSSkinsState() {
       skins.push({ hole: hi+1, winner, pot: carryPot, carried: carryPot > 1 });
       carryPot = 1;
     } else {
-      skins.push({ hole: hi+1, winner: null, pot: carryover ? carryPot : carryPot, carried: carryPot > 1, push: true });
+      skins.push({ hole: hi+1, winner: null, pot: carryover ? carryPot + 1 : carryPot, carried: carryPot > 1, push: true });
       if (carryover) carryPot++;
     }
   }
@@ -2359,8 +2434,8 @@ function computeSSTotals(skinsState) {
       const skinsWon = skinCounts[p.name];
       let payoutCents = skinsWon * basePerSkinCents;
       if (p.name === remainderPlayer && skinsWon > 0) payoutCents += remainderCents;
-      // Gross payout from pot — everyone paid buy-in already, just show what you collect
-      totals[p.name] = parseFloat((payoutCents / 100).toFixed(2));
+      // Net P&L: what you collect from the pot minus the buy-in you put in (zero-sum)
+      totals[p.name] = parseFloat(((payoutCents - Math.round(ss.buyIn * 100)) / 100).toFixed(2));
     });
   }
   return totals;
@@ -2416,7 +2491,7 @@ function renderSSSetup() {
       ? '<div class="field-row"><span class="field-label">$ per skin</span>'
         + '<input class="num-input" id="ss-skin-bet" value="'+ss.skinBet+'" type="number" min="1"/></div>'
         + '<div class="toggle-row" style="margin-top:10px"><span class="toggle-label">Carryover</span>'
-        + '<label class="toggle"><input type="checkbox" id="ss-carryover" '+(ss.carryover?'checked':'')+'"/><span class="toggle-slider"></span></label>'
+        + '<label class="toggle"><input type="checkbox" id="ss-carryover" '+(ss.carryover?'checked':'')+'/><span class="toggle-slider"></span></label>'
         + '</div>'
       : '<div class="field-row"><span class="field-label">Buy-in per player</span>'
         + '<input class="num-input" id="ss-buy-in" value="'+ss.buyIn+'" type="number" min="1"/></div>'
@@ -2526,7 +2601,7 @@ function renderSSLeaderboard() {
   const lbRows = sorted.map((p, i) => {
     const net = totals[p.name];
     const cls = net>0?'pos':net<0?'neg':'zero';
-    const sign = net>0?'+':'';
+    const sign = net>0?'+':net<0?'−':'';
     const won = skinsState.filter(s=>s.winner===p.name).length;
     const leaderClass = (i===0&&net>0) ? 'leader' : '';
     return '<div class="lb-row '+leaderClass+'">'
@@ -2578,7 +2653,7 @@ function renderSSSummary() {
   const ptRows = sorted.map((p, i) => {
     const net = totals[p.name];
     const cls = net>0?'pos':net<0?'neg':'zero';
-    const sign = net>0?'+':'';
+    const sign = net>0?'+':net<0?'−':'';
     const won = skinsState.filter(s=>s.winner===p.name).length;
     return '<div class="lb-row">'
       + '<span class="lb-rank '+(i===0?'gold':'')+'">'+(i===0?'★':i+1)+'</span>'
@@ -2592,11 +2667,16 @@ function renderSSSummary() {
     const net = totals[p.name];
     const won = skinsState.filter(s => s.winner === p.name).length;
     if (won === 0) return '';
-    const cls = 'var(--green-text)';
+    // totalpot: show what they collect from the pot (net + buy-in back).
+    // perhole: show their true net — a skin winner can still be down overall.
+    const amt = ss.betMode === 'totalpot' ? net + ss.buyIn : net;
+    const cls = amt > 0 ? 'var(--green-text)' : amt < 0 ? 'var(--red-text)' : 'var(--muted)';
+    const sign = amt > 0 ? '+' : amt < 0 ? '−' : '';
+    const label = ss.betMode === 'totalpot' ? won+' skin'+(won!==1?'s':'')+' → collects' : won+' skin'+(won!==1?'s':'')+' → net';
     return '<div class="hole-result-row" style="padding:7px 0">'
       + '<span style="font-family:IBM Plex Mono,monospace;font-size:0.85rem;color:var(--white);font-weight:600">'+p.name+'</span>'
-      + '<span style="font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:var(--muted)">'+won+' skin'+(won!==1?'s':'')+' →</span>'
-      + '<span style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+cls+'">+$'+fmt(Math.abs(net > 0 ? net : won * (ss.betMode==='totalpot' ? (ss.buyIn*ss.players.length/totalSkinsWon) : ss.skinBet*(ss.players.length-1))))+'</span>'
+      + '<span style="font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:var(--muted)">'+label+'</span>'
+      + '<span style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+cls+'">'+sign+'$'+fmt(Math.abs(amt))+'</span>'
       + '</div>';
   }).filter(Boolean).join('') || '<div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:10px">No skins won yet</div>';
 
@@ -2655,20 +2735,21 @@ function renderSSSummary() {
 function attachSSSetupEvents() {
   const ss = state.ssSetup;
   document.querySelectorAll('.ss-pname').forEach(inp => {
-    inp.addEventListener('input', e => { ss.players[parseInt(e.target.dataset.idx)].name = e.target.value; });
+    inp.addEventListener('input', e => { ss.players[parseInt(e.target.dataset.idx)].name = e.target.value; saveState(); });
     inp.addEventListener('blur', () => render());
   });
   document.querySelectorAll('.ss-hcp').forEach(inp => {
-    inp.addEventListener('input', e => { ss.players[parseInt(e.target.dataset.idx)].hcp = parseFloat(e.target.value)||0; });
+    inp.addEventListener('input', e => { ss.players[parseInt(e.target.dataset.idx)].hcp = numOr(e.target.value, 0); saveState(); });
   });
-  document.querySelector('[data-ss-remove]')?.addEventListener('click', e => {
+  document.querySelectorAll('[data-ss-remove]').forEach(btn => btn.addEventListener('click', e => {
     ss.players.splice(parseInt(e.target.dataset.ssRemove),1); render();
-  });
+  }));
   document.getElementById('ss-add-player')?.addEventListener('click', () => { ss.players.push({name:'',hcp:0}); render(); });
-  document.getElementById('ss-hcp-pct')?.addEventListener('input', e => { ss.hcpPct=parseFloat(e.target.value)||100; });
-  document.getElementById('ss-skin-bet')?.addEventListener('input', e => { ss.skinBet=parseFloat(e.target.value)||1; });
-  document.getElementById('ss-buy-in')?.addEventListener('input', e => { ss.buyIn=parseFloat(e.target.value)||1; render(); });
-  document.getElementById('ss-carryover')?.addEventListener('change', e => { ss.carryover=e.target.checked; });
+  document.getElementById('ss-hcp-pct')?.addEventListener('input', e => { ss.hcpPct=Math.max(0, Math.min(100, numOr(e.target.value, 100))); saveState(); });
+  document.getElementById('ss-skin-bet')?.addEventListener('input', e => { ss.skinBet=Math.max(0, numOr(e.target.value, 1)); saveState(); });
+  // No render() here — re-rendering on every keystroke destroys the focused input
+  document.getElementById('ss-buy-in')?.addEventListener('input', e => { ss.buyIn=Math.max(0, numOr(e.target.value, 1)); saveState(); });
+  document.getElementById('ss-carryover')?.addEventListener('change', e => { ss.carryover=e.target.checked; saveState(); });
   document.querySelectorAll('[data-ss-skin]').forEach(btn => {
     btn.addEventListener('click', e => { ss.skinType=e.target.dataset.ssSkin; render(); });
   });
@@ -2677,6 +2758,8 @@ function attachSSSetupEvents() {
   });
   document.getElementById('ss-start')?.addEventListener('click', () => {
     ss.players = ss.players.map((p,i)=>({...p, name:p.name.trim()||'Player '+(i+1)}));
+    const lower = ss.players.map(p => p.name.toLowerCase());
+    if (new Set(lower).size !== lower.length) { alert('Player names must be unique — skins are tracked by name.'); return; }
     const scores = {};
     ss.players.forEach(p => { scores[p.name] = {}; });
     state.ssGame = { tab:'scorecard', currentHole:0, scores, confirmedHoles:0 };
@@ -2715,14 +2798,16 @@ function attachSSGameEvents() {
       if (!sg.scores[p]) sg.scores[p] = {};
       const par = SJCC.holes[hi].par;
       const cur = sg.scores[p][hi] != null ? sg.scores[p][hi] : par + 1;
-      sg.scores[p][hi] = Math.max(1, cur - 1);
+      if (cur === 1) delete sg.scores[p][hi];
+      else sg.scores[p][hi] = cur - 1;
       render();
     });
   });
 
   document.getElementById('ss-confirm-hole')?.addEventListener('click', () => {
-    sg.confirmedHoles = (sg.confirmedHoles || 0) + 1;
-    sg.currentHole++;
+    // Max, not increment — re-confirming an earlier hole must not inflate the count
+    sg.confirmedHoles = Math.max(sg.confirmedHoles || 0, sg.currentHole + 1);
+    if (sg.currentHole < 17) sg.currentHole++;
     render();
   });
 
@@ -2871,8 +2956,9 @@ function renderJKSLeaderboard() {
   const parPlayed = SJCC.holes.slice(0, holesPlayed).reduce((s,h) => s+h.par, 0);
 
   const rows = sorted.map((p, i) => {
-    const netDiff = p.net - parPlayed;
-    const grossDiff = p.gross - parPlayed;
+    // Compare against the par of the holes THIS player has scored, not the global count
+    const netDiff = p.net - p.parTotal;
+    const grossDiff = p.gross - p.parTotal;
     const netStr = netDiff === 0 ? 'E' : (netDiff > 0 ? '+'+netDiff : ''+netDiff);
     const grossStr = grossDiff === 0 ? 'E' : (grossDiff > 0 ? '+'+grossDiff : ''+grossDiff);
     const netColor = netDiff < 0 ? 'var(--gold-bright)' : netDiff === 0 ? 'var(--white)' : 'var(--red-text)';
@@ -2997,19 +3083,21 @@ function renderJKSSummary() {
 function attachJKSSetupEvents() {
   const jks = state.jksSetup;
   document.querySelectorAll('.jks-pname').forEach(inp => {
-    inp.addEventListener('input', e => { jks.players[parseInt(e.target.dataset.idx)].name = e.target.value; });
+    inp.addEventListener('input', e => { jks.players[parseInt(e.target.dataset.idx)].name = e.target.value; saveState(); });
     inp.addEventListener('blur', () => render());
   });
   document.querySelectorAll('.jks-hcp').forEach(inp => {
-    inp.addEventListener('input', e => { jks.players[parseInt(e.target.dataset.idx)].hcp = parseFloat(e.target.value)||0; });
+    inp.addEventListener('input', e => { jks.players[parseInt(e.target.dataset.idx)].hcp = numOr(e.target.value, 0); saveState(); });
   });
-  document.querySelector('[data-jks-remove]')?.addEventListener('click', e => {
+  document.querySelectorAll('[data-jks-remove]').forEach(btn => btn.addEventListener('click', e => {
     jks.players.splice(parseInt(e.target.dataset.jksRemove),1); render();
-  });
+  }));
   document.getElementById('jks-add-player')?.addEventListener('click', () => { jks.players.push({name:'',hcp:0}); render(); });
-  document.getElementById('jks-hcp-pct')?.addEventListener('input', e => { jks.hcpPct = parseFloat(e.target.value)||100; });
+  document.getElementById('jks-hcp-pct')?.addEventListener('input', e => { jks.hcpPct = Math.max(0, Math.min(100, numOr(e.target.value, 100))); saveState(); });
   document.getElementById('jks-start')?.addEventListener('click', () => {
     jks.players = jks.players.map((p,i) => ({...p, name: p.name.trim()||'Player '+(i+1)}));
+    const lower = jks.players.map(p => p.name.toLowerCase());
+    if (new Set(lower).size !== lower.length) { alert('Player names must be unique — scores are tracked by name.'); return; }
     const scores = {};
     jks.players.forEach(p => { scores[p.name] = {}; });
     state.jksGame = { tab:'scorecard', currentHole:0, scores, confirmedHoles:0 };
@@ -3048,14 +3136,16 @@ function attachJKSGameEvents() {
       if (!jg.scores[p]) jg.scores[p] = {};
       const par = SJCC.holes[hi].par;
       const cur = jg.scores[p][hi] != null ? jg.scores[p][hi] : par + 1;
-      jg.scores[p][hi] = Math.max(1, cur - 1);
+      if (cur === 1) delete jg.scores[p][hi];
+      else jg.scores[p][hi] = cur - 1;
       render();
     });
   });
 
   document.getElementById('jks-confirm-hole')?.addEventListener('click', () => {
-    jg.confirmedHoles = (jg.confirmedHoles || 0) + 1;
-    jg.currentHole++;
+    // Max, not increment — re-confirming an earlier hole must not inflate the count
+    jg.confirmedHoles = Math.max(jg.confirmedHoles || 0, jg.currentHole + 1);
+    if (jg.currentHole < 17) jg.currentHole++;
     render();
   });
 
@@ -3074,7 +3164,7 @@ render();
 // Register service worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/wolf-tracker/sw.js')
+    navigator.serviceWorker.register('sw.js')
       .then(reg => {
         // Check for updates every time the page loads
         reg.update();

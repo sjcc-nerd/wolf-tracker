@@ -10,7 +10,7 @@ No build step, no dependencies, no package manager. The entire app is `index.htm
 
 **To deploy:** Commit to `main`. GitHub Pages auto-deploys to `https://sjcc-nerd.github.io/wolf-tracker` in ~60 seconds. A service worker handles cache invalidation automatically — users get the new version on next page load or browser refresh without manual cache clearing.
 
-**Service worker:** `sw.js` uses a network-first strategy. When you deploy a new version, it is picked up automatically. If you need to force-bust all caches (e.g. after a major restructure), bump `CACHE_NAME` in `sw.js` from `sjcc-scoring-v1` to `v2` and redeploy both files. The SW registration path is `/wolf-tracker/sw.js` — update this if the repo is ever renamed.
+**Service worker:** `sw.js` uses a network-first strategy. When you deploy a new version, it is picked up automatically. If you need to force-bust all caches (e.g. after a major restructure), bump `CACHE_NAME` in `sw.js` (currently `sjcc-scoring-v2`) and redeploy both files. The SW is registered with the relative path `sw.js` and caches scope-relative assets, so it works both locally and on GitHub Pages regardless of repo name.
 
 ## Architecture
 
@@ -41,10 +41,13 @@ render()
 state.screen       — 'home' | 'wolf-setup' | 'wolf-game' | 'ns-setup' | 'ns-game'
                      | '9pt-setup' | '9pt-game' | 'ss-setup' | 'ss-game'
                      | 'jks-setup' | 'jks-game'
-state.players      — [{ name, hcp }] — shared across Nassau + Skins
+state.players      — [{ name, hcp }] — Nassau/Skins game roster. Deep-copied from
+                     nsSetup.players at Start so mid-round setup edits can't orphan
+                     name-keyed scores.
 state.scores       — { [playerName]: { [holeIndex]: grossScore } } — 0-indexed
 state.wolf         — Wolf setup: { players[], defaultBet }
-state.wolfGame     — Wolf runtime: { holes[], currentHole, holeInput, tab, editingHole }
+state.wolfGame     — Wolf runtime: { players[] (roster snapshot), holes[], currentHole,
+                     holeInput, editInput (edit-modal buffer), tab, editingHole }
 state.nsSetup      — Nassau/Skins config (see below)
 state.nsGame       — Nassau/Skins runtime: { currentHole, presses[], tab }
 state.ptSetup      — 9pt/16pt config: { players[], hcpPct, blitz, vpp }
@@ -59,6 +62,9 @@ state.wolfSaved / state.nsSaved / state.ptSaved / state.ssSaved / state.jksSaved
 
 `nsSetup` contains all config for both Nassau and Skins games:
 - `players[]`, `hcpPct`, `nassau`, `nassauFormat` ('match'|'stroke'), `teamA[]`, `teamB[]`
+- `teamAIdx[]` / `teamBIdx[]` — team membership by player INDEX, the source of truth
+  during setup (survives renames). `ns-start` resolves them into `teamA`/`teamB` name
+  arrays, which is what the game/compute code consumes.
 - `betFront`, `betBack`, `betTotal`, `autoPress`, `presses[]`
 - `skins`, `skinType` ('net'|'gross'|'canadian'), `skinBet`, `carryover`
 
@@ -94,11 +100,17 @@ SJCC (San Jose Country Club, par 70) is hardcoded as the only course. Each hole:
 
 ## Input Handling Pattern
 
-Name `<input>` fields follow a specific pattern to avoid focus loss on re-render:
-- Save state on `input` event
-- Trigger `render()` only on `blur`
+All setup `<input>` fields follow a specific pattern to avoid focus loss on re-render:
+- Mutate state AND call `saveState()` on the `input` event (persistence must not wait
+  for a render — a refresh right after typing would otherwise lose the edit)
+- Trigger `render()` only on `blur` (name fields) or never (numeric fields — the value
+  is already on screen)
 
-Numeric inputs (scores, bets) call `render()` immediately on change.
+Never call `render()` inside an `input` listener on a focused text/number field — the
+full-DOM rebuild destroys the input mid-type.
+
+Numeric parsing uses `numOr(value, default)` — NOT `parseFloat(v) || default`, which
+silently turns a typed `0` into the default (this bug made "handicap 0%" compute at 100%).
 
 ## Scorecard Flow (Nassau/Skins)
 
@@ -157,12 +169,38 @@ Numeric inputs (scores, bets) call `render()` immediately on change.
 - Summary renders the full scorecard table (gross with `*` on stroke holes, gross + net totals, net-to-par)
 - Use this mode when somebody wants a digital scorecard but isn't playing for money
 
+## Game Rules Encoded (verified 2026-08)
+
+- **Duplicate player names are blocked at Start in all 5 modes** — every mode keys
+  scores/results/points by name, so two "Bob"s corrupt the money math.
+- **Canadian skins**: gross birdie-or-better beats everyone; among those, best GROSS
+  wins outright and net only breaks a gross tie (a holed eagle beats a strokes-aided
+  birdie). No gross birdie → best net wins.
+- **9pt Leaderboard $** uses the pairwise formula `n·(pts − avg)·vpp` so it always
+  matches the Summary's "Who Owes Who" ledger.
+- **Skins Only totalpot** totals are net P&L (payout − buy-in, zero-sum); the Payouts
+  card shows what each winner collects from the pot (net + buy-in).
+- **Auto-press** never fires on a closed-out match; removing a press also removes its
+  cascade descendants.
+- **Wolf ends at 18** — confirm on hole 18 jumps to the Leaderboard; the edit modal
+  uses its own `editInput` buffer so it can't clobber the in-progress hole.
+- **strokesOnHole** handles any handicap: `floor(adjHcp/18)` on every hole plus 1 on
+  stroke-index ≤ `adjHcp % 18` (a 40-cap gets 3 strokes on index 1–4).
+- **Score clearing**: tapping − when a score is at 1 clears it back to empty.
+- **Money display**: negative amounts always render with an explicit − sign (six
+  leaderboard/summary sites share the `sign` pattern — keep them consistent).
+
 ## Known Issues / Backlog
 
-- Nassau stroke play mode — logic scaffolded but `bestBallHole()` returns the same value for both `'match'` and `'stroke'` branches
-- Auto press edge cases at end of front/back 9 not fully stress-tested
-- Skins Only `totalpot` summary shows gross payout, not net (buy-in not subtracted from non-winners)
+- Nassau stroke play mode — `bestBallHole()` still returns the same value for both
+  `'match'` and `'stroke'` branches (the `nassauFormat` destructure is fixed, so
+  implementing the stroke branch is now sufficient)
+- A single missing score freezes Nassau match state for the rest of the segment
+  (`resolveMatch` breaks at the first unscored hole) while Skins keeps scoring
+- Mid-round roster rename protection exists for Wolf and Nassau/Skins (snapshots);
+  9pt / Skins Only / JKS setups still alias their game rosters
 - No confirmation screen before ending a round
 - No multi-course support — SJCC is hardcoded
 - App name / repo name mismatch (`wolf-tracker` repo, `SJCC SCORING` brand)
-- No PWA manifest (service worker is in place but no `manifest.json` for home screen install)
+- No PWA manifest (service worker + theme-color are in place; needs `manifest.json`
+  and icons for home screen install)
