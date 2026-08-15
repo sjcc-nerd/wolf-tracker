@@ -10,7 +10,8 @@ A mobile-first single-file web app for tracking golf gambling games. No framewor
 ## Stack
 
 - Vanilla HTML/CSS/JS — no frameworks, no build step, no dependencies
-- Two files: `index.html` + `sw.js` (service worker)
+- App is two files: `index.html` + `sw.js` (service worker)
+- Tests are Node built-ins only (`node --test` + a fuzzer) — see Testing below
 - State persisted to `localStorage`
 - Hosted on GitHub Pages (free, static)
 - Service worker handles automatic cache invalidation — no manual cache clearing needed after deploys
@@ -29,7 +30,8 @@ state.screen          — current screen (home | wolf-setup | wolf-game | ns-set
 state.players         — array of { name, hcp } — shared across Nassau/Skins
 state.scores          — { [playerName]: { [holeIndex]: grossScore } } — 0-indexed holes
 state.wolf            — Wolf setup config { players[], defaultBet }
-state.wolfGame        — Wolf game state { holes[], currentHole, holeInput, tab, editingHole }
+state.wolfGame        — Wolf game state { players[] (in-round roster snapshot), holes[],
+                        currentHole, holeInput, editInput (edit-modal buffer), tab, editingHole }
 state.nsSetup         — Nassau/Skins config (see below)
 state.nsGame          — Nassau/Skins game state { currentHole, presses[], tab }
 state.ptSetup         — 9pt/16pt config { players[], hcpPct, blitz, vpp }
@@ -51,8 +53,10 @@ players[]             — array of { name, hcp }
 hcpPct                — handicap percentage used (default 100)
 nassau                — boolean toggle
 nassauFormat          — 'match' | 'stroke'
-teamA[]               — player names on Team A
-teamB[]               — player names on Team B
+teamAIdx[] / teamBIdx[] — team membership by player INDEX (setup source of truth;
+                        survives renames — resolved to names at Start Round)
+teamA[]               — player names on Team A (derived at Start; what the game reads)
+teamB[]               — player names on Team B (derived at Start)
 betFront              — $ bet for front 9
 betBack               — $ bet for back 9
 betTotal              — $ bet for overall 18
@@ -80,7 +84,10 @@ render(skipTransition?)
 - Scroll position saved/restored on every render (prevents jumping to top)
 - Toast utility `showToast(msg)` for ephemeral confirmations (auto-dismisses after 2.5s)
 - `touch-action: manipulation` on all interactive elements (prevents iOS double-tap zoom)
-- **Screen transition overlay** — `#oak-overlay` (SJCC oak tree SVG + pulsing dots) fades in/out on any screen change. Total ~1.5s of motion. Tab switches inside a game count as same-screen and skip the transition. Overlay is injected once at boot; pass `skipTransition=true` to `render()` to bypass when needed
+- **Screen transition overlay** — `#oak-overlay` (SJCC oak tree SVG + pulsing dots) fades in/out on any screen change. Total ~850ms of motion. Tab switches inside a game count as same-screen and skip the transition. Overlay is injected once at boot (a throwing render can't leave it stuck — the fade-out is in a `finally`); pass `skipTransition=true` to `render()` to bypass when needed
+- Numeric inputs parse via `numOr(value, default)` — a typed `0` stays 0 (never coerced to the default), and all setup inputs persist to localStorage on `input`, not just on re-render
+- Duplicate player names are rejected at Start in every mode (all scoring is keyed by name)
+- Safe-area insets for notched iPhones; 42px score buttons; focus-visible outlines
 
 ---
 
@@ -89,8 +96,9 @@ render(skipTransition?)
 SJCC (San Jose Country Club, par 70) is hardcoded as the default course. 18 holes, each with `{ num, par, hcp, yds }` where `hcp` is the stroke index (1–18) used for handicap allocation.
 
 Handicap strokes per hole allocated via `strokesOnHole(playerHcp, holeHcp, hcpPct)`:
-- Returns 0, 1, or 2 strokes depending on player handicap vs hole stroke index
-- Supports partial handicap via `hcpPct` (e.g. 85%)
+- Standard allocation: `floor(adjHcp / 18)` strokes on every hole, plus 1 on holes with stroke index ≤ `adjHcp % 18` (a 40-handicap gets 3 strokes on index 1–4)
+- Supports partial handicap via `hcpPct` (e.g. 85%); `hcpPct = 0` means play it gross
+- Total strokes across 18 always equals the adjusted handicap (test-enforced)
 
 ---
 
@@ -103,7 +111,8 @@ Hole-by-hole gambling game. One scorer tracks all players.
 - Each hole: tap each player to cycle PUSH → WIN → LOSS → PUSH (defaults to PUSH)
 - $ per hole is editable (default set at start, adjustable per hole with +/− or direct input)
 - Confirm is always enabled — all-push is a valid outcome
-- **Math:** losers fund the pot, winners split equally
+- **Math:** every winner collects at least the full hole value and every loser pays at least the full hole value — money moved is `max(winners, losers) × bet`, split evenly within each side. 3W vs 2L at $5 → winners +$5 each, losers −$7.50 each; 1W vs 2L at $5 → winner +$10, losers −$5 each. A winner is never diluted below the hole value.
+- Round ends after hole 18 (auto-jumps to Leaderboard); past holes editable from Previous Holes via a separate edit buffer that never clobbers the in-progress hole
 - Tabs: Play / Leaderboard / Previous Holes (with edit)
 - localStorage preserves round through refresh
 
@@ -136,7 +145,7 @@ Scorecard-based. Played simultaneously from a shared scorecard.
 - 2–5 players, every man for himself
 - **Net skins (default):** lowest net score wins
 - **Gross skins:** lowest gross score wins
-- **Canadian skins:** gross birdie or better always beats net birdie; tiebreaker is net; push if still tied
+- **Canadian skins:** gross birdie or better beats everything else; among multiple gross birdies the best **gross** wins outright (a holed eagle beats a strokes-aided birdie), net only breaks a gross tie; push if still tied; no gross birdie → best net wins
 - Carryover optional (off by default)
 - **Math:** losers fund pot, winners split equally
 - Live leaderboard updates as scores entered
@@ -160,6 +169,7 @@ Standalone skins game. Independent scores — does not share with Nassau/Skins.
 - Two bet structures:
   - **Per Hole:** fixed `$ per skin`; optional carryover (pot multiplier accumulates on pushes)
   - **Total Pot:** fixed `buy-in` per player; whole pot splits across total skins won at end of round; per-skin value floats as more skins are won (extra cents go to the player with most skins, then to player order)
+- **Totals are net P&L** (payout minus buy-in, zero-sum) — the Payouts card additionally shows what each winner collects from the pot
 - Live leaderboard + per-hole result log
 - Summary shows scorecard with stroke markers and a 🏆 on skin-winning holes
 
@@ -188,7 +198,8 @@ Plain scorekeeper — no betting, no game mechanics, just tracking strokes.
 | `nassauPayout(ns, nassauResult)` | Returns dollar result per bet segment |
 | `computeSkinsState(ss)` | Returns per-hole skins results |
 | `skinsTotals(skinsState, skinBet, players)` | Returns net $ per player for skins |
-| `wolfHoleResult(bet, statuses, players)` | Returns $ delta per player for a Wolf hole |
+| `wolfHoleResult(bet, statuses, players)` | Returns $ delta per player for a Wolf hole — `max(W,L) × bet` moved, split per side |
+| `numOr(value, default)` | Numeric input parsing — 0 and negatives parse as themselves, only garbage falls back |
 | `checkAutoPress(holeIdx)` | Fires on Confirm Hole only; spawns press if 2-down and parent hasn't spawned |
 | `compute9ptHole(netScores, blitz)` | Returns `{pts, blitz}` per-player points for one 9pt/16pt hole, with full tie-handling |
 | `compute9ptTotals()` | Cumulative 9pt/16pt point totals across played holes |
@@ -200,34 +211,54 @@ Plain scorekeeper — no betting, no game mechanics, just tracking strokes.
 
 ---
 
+## Testing
+
+Zero dependencies — Node built-ins only (same policy as [golfr](https://github.com/sjcc-nerd/golfr)).
+
+```
+node --test              # engine + app suites (~73 tests, <1s)
+node fuzz.js [seed] [n]  # randomized chaos harness (default 20 seeds)
+```
+
+- `test-harness.js` — extracts the `<script>` from `index.html` and boots it in `node:vm` against hand-rolled browser stubs. A simplified browser: proves math, sequencing, and no-crash — not pixels or tap wiring.
+- `engine.test.js` — the money math, exhaustively: stroke allocation sums, all 81 Wolf status combos, every 9pt/16pt tie shape + blitz, all three skin types, carryover, totalpot cents, Nassau matches/payouts, auto-press spawn/cascade/boundary rules.
+- `app.test.js` — boot vs corrupt storage, every screen × tab against hostile state, display regressions (minus signs, `Hole 19 of 18`, malformed attributes), mobile invariants, SW path checks.
+- `fuzz.js` — seeded full random rounds per mode with zero-sum money asserts after every hole; a failure prints the seed to replay it exactly.
+
+Run both before every push.
+
+---
+
 ## Known Issues / Backlog
 
 - [ ] Nassau stroke play mode — toggle exists but `bestBallHole()` returns identical values for both `'match'` and `'stroke'` branches
-- [ ] Auto press edge cases at end of front/back 9 not fully stress-tested
-- [ ] Skins Only `totalpot` summary shows gross pot collected, not net P&L — players who win 0 skins display $0 instead of `-$buyIn`
+- [ ] A single missing score freezes Nassau match state for the rest of the segment while Skins keeps scoring
+- [ ] Mid-round roster-rename protection exists for Wolf and Nassau/Skins (snapshots); 9pt / Skins Only / JKS setups still alias their game rosters
 - [ ] No confirmation screen before ending a round
 - [ ] No multi-course support — SJCC hardcoded
 - [ ] Repo/app name mismatch — repo is `wolf-tracker`, app is branded `SJCC SCORING`
-- [ ] No PWA manifest (service worker in place but no `manifest.json` for home screen install)
+- [ ] No PWA manifest (service worker + theme-color in place; needs `manifest.json` + icons for home screen install)
 
 ---
 
 ## Deploying Changes
 
-1. Edit `index.html` (and `sw.js` if needed) directly in GitHub or locally
-2. Commit to `main` branch
-3. GitHub Pages auto-deploys in ~60 seconds
-4. Service worker delivers the update to all devices automatically on next page load or refresh
+1. Edit `index.html` (and `sw.js` if needed) locally
+2. `node --test` — all green, plus `node fuzz.js` for money-math changes
+3. Commit to `main` branch
+4. GitHub Pages auto-deploys in ~60 seconds
+5. Service worker delivers the update to all devices automatically on next page load or refresh
 
-**To force-bust all caches:** bump `CACHE_NAME` in `sw.js` from `sjcc-scoring-v1` to `v2` and redeploy both files.
+**To force-bust all caches:** bump `CACHE_NAME` in `sw.js` (currently `sjcc-scoring-v2`) and redeploy both files.
 
-**If repo is renamed:** update the SW registration path in `index.html` and the ASSETS array in `sw.js` to match the new repo name.
+**If repo is renamed:** nothing to update — the SW registration and cache paths are scope-relative (test-enforced).
 
 ---
 
 ## Design Principles
 
-- **Two files max.** No build step, no node_modules, drag-and-drop deployable anywhere.
-- **Mobile first.** Large tap targets, `touch-action: manipulation` everywhere, works one-handed on a fairway.
+- **Two app files.** No build step, no node_modules, drag-and-drop deployable anywhere. (Test files live in the repo but never ship.)
+- **Mobile first.** 42px tap targets, safe-area insets, `touch-action: manipulation` everywhere, works one-handed on a fairway.
 - **No server.** All logic runs in the browser. localStorage is the database.
 - **Stateless renders.** Every render rebuilds from `state`. No partial updates.
+- **Money math is test-enforced.** Every payout rule has a golden test and a zero-sum invariant; changing a rule means changing its test on purpose.
