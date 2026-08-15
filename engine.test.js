@@ -77,14 +77,38 @@ test('fmt strips whole-number decimals, keeps cents', () => {
 
 /* ---------------- Wolf ---------------- */
 
-test('wolfHoleResult: 1 winner, N losers — winner collects the whole pot', () => {
+/* Wolf payout rule: every winner collects AT LEAST the full hole value and
+   every loser pays AT LEAST the full hole value; the smaller side absorbs
+   the difference (transfer = max(W, L) x bet, split evenly per side). */
+
+test('wolfHoleResult: 1 winner, N losers — winner collects from every loser', () => {
   const r = call(`wolfHoleResult(5, {A:'winner',B:'loser',C:'loser',D:'push'}, ['A','B','C','D'])`);
   assert.deepEqual(r, { A: 10, B: -5, C: -5, D: 0 });
 });
 
-test('wolfHoleResult: multiple winners split the pot', () => {
+test('wolfHoleResult: winners outnumber losers — losers pay extra so each winner gets the full bet', () => {
+  // The 3W vs 2L case: winners must NOT be diluted to $3.33.
+  const r = call(`wolfHoleResult(5, {A:'winner',B:'winner',C:'winner',D:'loser',E:'loser'}, ['A','B','C','D','E'])`);
+  assert.deepEqual(r, { A: 5, B: 5, C: 5, D: -7.5, E: -7.5 });
+});
+
+test('wolfHoleResult: 2 winners vs 1 loser — lone loser covers both winners', () => {
   const r = call(`wolfHoleResult(5, {A:'winner',B:'winner',C:'loser',D:'push'}, ['A','B','C','D'])`);
-  assert.deepEqual(r, { A: 2.5, B: 2.5, C: -5, D: 0 });
+  assert.deepEqual(r, { A: 5, B: 5, C: -10, D: 0 });
+});
+
+test('wolfHoleResult: everyone always moves at least the full bet', () => {
+  const S = ['push', 'winner', 'loser'];
+  for (const a of S) for (const b of S) for (const c of S) for (const d of S) {
+    const st = { A: a, B: b, C: c, D: d };
+    const hasW = Object.values(st).includes('winner'), hasL = Object.values(st).includes('loser');
+    if (!hasW || !hasL) continue;
+    const r = call(`wolfHoleResult(5, ${JSON.stringify(st)}, ['A','B','C','D'])`);
+    for (const [p, s] of Object.entries(st)) {
+      if (s === 'winner') assert.ok(r[p] >= 5, `winner ${p} got $${r[p]} in ${JSON.stringify(st)}`);
+      if (s === 'loser') assert.ok(r[p] <= -5, `loser ${p} paid $${-r[p]} in ${JSON.stringify(st)}`);
+    }
+  }
 });
 
 test('wolfHoleResult: no winners (or no losers) moves no money', () => {

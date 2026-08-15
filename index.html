@@ -794,14 +794,15 @@ function renderWolfPlay() {
   }
   const winners = players.filter(p => hi.statuses[p] === 'winner');
   const losers  = players.filter(p => hi.statuses[p] === 'loser');
-  const pot = losers.length * hi.bet;
-  const winEach = winners.length > 0 ? pot / winners.length : 0;
   let preview = '';
   if (losers.length > 0 && winners.length > 0) {
+    const transfer = Math.max(winners.length, losers.length) * hi.bet;
+    const winEach  = transfer / winners.length;
+    const loseEach = transfer / losers.length;
     preview = `<div class="wolf-preview">
-      <div class="ml">${losers.length} loser${losers.length>1?'s':''} × $${hi.bet} = $${pot} pot</div>
-      <div class="ml g">Winners each get +$${winEach%1===0?winEach:winEach.toFixed(2)}</div>
-      <div class="ml r">Losers each pay −$${hi.bet}</div>
+      <div class="ml">${winners.length}W vs ${losers.length}L · $${fmt(transfer)} changes hands</div>
+      <div class="ml g">Winners each get +$${fmt(winEach)}</div>
+      <div class="ml r">Losers each pay −$${fmt(loseEach)}</div>
     </div>`;
   }
   const cards = players.map(p => {
@@ -915,10 +916,15 @@ function wolfHoleResult(bet, statuses, players) {
   const results = {};
   players.forEach(p => results[p] = 0);
   if (winners.length > 0 && losers.length > 0) {
-    const pot = losers.length * bet;
-    const winEach = pot / winners.length;
+    // Every winner collects at least the full hole value and every loser
+    // pays at least the full hole value — the smaller side absorbs the
+    // difference. (3W vs 2L at $5: winners +$5 each, losers −$7.50 each;
+    // 1W vs 2L at $5: winner +$10, losers −$5 each.)
+    const transfer = Math.max(winners.length, losers.length) * bet;
+    const winEach  = transfer / winners.length;
+    const loseEach = transfer / losers.length;
     winners.forEach(p => results[p] = winEach);
-    losers.forEach(p  => results[p] = -bet);
+    losers.forEach(p  => results[p] = -loseEach);
   }
   return results;
 }

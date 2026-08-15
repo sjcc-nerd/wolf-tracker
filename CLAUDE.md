@@ -168,7 +168,13 @@ silently turns a typed `0` into the default (this bug made "handicap 0%" compute
 - Each player defaults to PUSH; tap to cycle PUSH → WIN → LOSS → PUSH
 - Confirm is always enabled (all-push is a valid outcome)
 - Previous Holes tab allows editing any past hole
-- `state.wolf.players[]` is a flat array of name strings (not objects)
+- `state.wolf.players[]` is a flat array of name strings (not objects);
+  `state.wolfGame.players[]` is the frozen in-round snapshot
+- **Payout rule (owner-confirmed 2026-08):** every winner collects AT LEAST the
+  full hole value and every loser pays AT LEAST the full hole value — the money
+  moved is `max(winners, losers) × bet`, split evenly within each side. 3W vs 2L
+  at $5 → winners +$5 each, losers −$7.50 each; 1W vs 2L at $5 → winner +$10,
+  losers −$5 each. Never dilute a winner below the hole value.
 
 ## 9 Point Game (and 16 Point)
 
