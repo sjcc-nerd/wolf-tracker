@@ -8,6 +8,32 @@ No build step, no dependencies, no package manager. The entire app is `index.htm
 
 **To develop:** Open `index.html` in a browser (or serve with any static file server). Changes are visible immediately on reload.
 
+**To verify:** `node --test` (engine + app suites, ~70 tests, no dependencies —
+Node built-ins only, same policy as golfr). `node fuzz.js [startSeed] [numSeeds]`
+runs the randomized chaos harness (default 20 seeds; failures print the seed to
+replay). Run both before every push — the engine tests are the only thing
+standing between a refactor and someone's real money.
+
+**Test architecture** (mirrors sjcc-nerd/golfr):
+- `test-harness.js` — extracts the `<script>` from index.html and evaluates it
+  in `node:vm` against hand-rolled browser stubs; `run(code)` reaches into the
+  context (top-level functions land on its globalThis; `state` is evaluable).
+  It is a simplified browser: proves math/sequencing/no-crash, not pixels, and
+  not tap wiring (attach*Events listeners bind to inert stubs).
+- `engine.test.js` — every money function: stroke allocation totals, all 81
+  Wolf status combos, every 9pt/16pt tie shape + blitz, all three skin types
+  (incl. the canadian gross-tiebreak regression), carryover, totalpot cents,
+  Nassau matches/payouts, auto-press spawn/cascade/boundary/closed rules.
+- `app.test.js` — boot vs corrupt storage, every screen × tab renders against
+  hostile state, display regressions (minus signs, checked attr, Hole 19),
+  mobile invariants (meta tags, 42px targets, safe areas), SW path checks.
+- `fuzz.js` — seeded full-round chaos per mode with zero-sum asserts after
+  every hole plus a storage round-trip reload at the end.
+
+When entering scores in tests, mimic real play: enter holes incrementally
+before each `checkAutoPress` call — pre-seeding future holes makes presses
+cascade early (the engine reads whatever scores exist).
+
 **To deploy:** Commit to `main`. GitHub Pages auto-deploys to `https://sjcc-nerd.github.io/wolf-tracker` in ~60 seconds. A service worker handles cache invalidation automatically — users get the new version on next page load or browser refresh without manual cache clearing.
 
 **Service worker:** `sw.js` uses a network-first strategy. When you deploy a new version, it is picked up automatically. If you need to force-bust all caches (e.g. after a major restructure), bump `CACHE_NAME` in `sw.js` (currently `sjcc-scoring-v2`) and redeploy both files. The SW is registered with the relative path `sw.js` and caches scope-relative assets, so it works both locally and on GitHub Pages regardless of repo name.
