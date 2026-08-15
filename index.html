@@ -535,6 +535,17 @@ function skinsTotals(skinsState, skinBet, players) {
 let _prevScreen = null;
 let _transitioning = false;
 
+// Double-tap guard for Confirm/Finish buttons: after a confirm re-renders,
+// a second tap lands on the fresh button and would silently log the next
+// hole as all-push. One confirm per 600ms.
+let _lastConfirmAt = 0;
+function confirmGuard() {
+  const now = Date.now();
+  if (now - _lastConfirmAt < 600) return false;
+  _lastConfirmAt = now;
+  return true;
+}
+
 function render(skipTransition) {
   const app = document.getElementById('app');
   const scrollEl = document.querySelector('.screen') || document.querySelector('.tab-content');
@@ -857,7 +868,7 @@ function renderWolfPrev() {
     const results = wolfPlayers.map(p => {
       const d = h.results[p];
       if (d===0) return '';
-      return `<span class="chip ${d>0?'green':'red'}">${p}: ${d>0?'+':''}$${fmt(Math.abs(d))}</span>`;
+      return `<span class="chip ${d>0?'green':'red'}">${p}: ${d>0?'+':'−'}$${fmt(Math.abs(d))}</span>`;
     }).filter(Boolean).join(' ');
     return `<div class="card" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -1447,6 +1458,7 @@ function attachWolfSetupEvents() {
   document.getElementById('wolf-add-player')?.addEventListener('click', () => { state.wolf.players.push(''); render(); });
   document.getElementById('wolf-default-bet')?.addEventListener('input', e => { state.wolf.defaultBet = Math.max(1, numOr(e.target.value, 5)); saveState(); });
   document.getElementById('wolf-start')?.addEventListener('click', () => {
+    if (state.wolfSaved && !confirm('Start a new round? Your saved Wolf round will be discarded.')) return;
     state.wolf.players = state.wolf.players.map((p,i)=>p.trim()||`Player ${i+1}`);
     const lower = state.wolf.players.map(p => p.toLowerCase());
     if (new Set(lower).size !== lower.length) { alert('Player names must be unique — results are tracked by name.'); return; }
@@ -1472,9 +1484,9 @@ function attachWolfGameEvents() {
     state.wolfSaved = false; state.screen = 'home'; render();
   });
 
-  // Bet
+  // Bet — parseFloat, not parseInt: a typed $2.50 must not silently become $2
   const betInput = document.getElementById('wolf-bet-input');
-  betInput?.addEventListener('input', e => { const v=parseInt(e.target.value); if(!isNaN(v)&&v>=1) wg.holeInput.bet=v; });
+  betInput?.addEventListener('input', e => { const v=numOr(e.target.value, 0); if(v>0) { wg.holeInput.bet=v; saveState(); } });
   betInput?.addEventListener('blur', ()=>render());
   document.getElementById('wolf-bet-up')?.addEventListener('click', ()=>{ wg.holeInput.bet=Math.max(1,wg.holeInput.bet+1); render(); });
   document.getElementById('wolf-bet-down')?.addEventListener('click', ()=>{ wg.holeInput.bet=Math.max(1,wg.holeInput.bet-1); render(); });
@@ -1493,6 +1505,7 @@ function attachWolfGameEvents() {
   // Confirm
   const wolfPlayers = wg.players || state.wolf.players;
   document.getElementById('wolf-confirm-hole')?.addEventListener('click', () => {
+    if (!confirmGuard()) return;
     const hi = wg.holeInput;
     const results = wolfHoleResult(hi.bet, hi.statuses, wolfPlayers);
     wg.holes.push({ num: wg.currentHole, bet: hi.bet, statuses: {...hi.statuses}, results });
@@ -1527,7 +1540,7 @@ function attachWolfGameEvents() {
       closeModal();
     });
     const editBet = document.getElementById('wolf-edit-bet-input');
-    editBet?.addEventListener('input', e => { const v=parseInt(e.target.value); if(!isNaN(v)&&v>=1) wg.editInput.bet=v; });
+    editBet?.addEventListener('input', e => { const v=numOr(e.target.value, 0); if(v>0) { wg.editInput.bet=v; saveState(); } });
     editBet?.addEventListener('blur', ()=>render());
     document.getElementById('wolf-edit-bet-up')?.addEventListener('click', ()=>{ wg.editInput.bet=Math.max(1,wg.editInput.bet+1); render(); });
     document.getElementById('wolf-edit-bet-down')?.addEventListener('click', ()=>{ wg.editInput.bet=Math.max(1,wg.editInput.bet-1); render(); });
@@ -1595,6 +1608,7 @@ function attachNSSetupEvents() {
 
   document.getElementById('ns-start')?.addEventListener('click', () => {
     // Validate
+    if (state.nsSaved && !confirm('Start a new round? Your saved Nassau/Skins round will be discarded.')) return;
     ns.players = ns.players.map((p,i)=>({...p, name:p.name.trim()||`Player ${i+1}`}));
     const lower = ns.players.map(p => p.name.toLowerCase());
     if (new Set(lower).size !== lower.length) { alert('Player names must be unique — scores are tracked by name.'); return; }
@@ -1663,6 +1677,7 @@ function attachNSGameEvents() {
   // Manual press
   // Confirm hole — runs auto-press check then advances
   document.getElementById('ns-confirm-hole')?.addEventListener('click', () => {
+    if (!confirmGuard()) return;
     const hi = ng.currentHole;
     checkAutoPress(hi);
     ng.currentHole++;
@@ -1671,6 +1686,7 @@ function attachNSGameEvents() {
 
   // Finish round — auto-press on 18, then go to summary
   document.getElementById('ns-finish-round')?.addEventListener('click', () => {
+    if (!confirmGuard()) return;
     const hi = ng.currentHole;
     checkAutoPress(hi);
     ng.tab = 'summary';
@@ -2237,6 +2253,7 @@ function attach9ptSetupEvents() {
   document.getElementById('pt-blitz')?.addEventListener('change', e => { ps.blitz = e.target.checked; saveState(); });
 
   document.getElementById('pt-start')?.addEventListener('click', () => {
+    if (state.ptSaved && !confirm('Start a new round? Your saved points-game round will be discarded.')) return;
     ps.players = ps.players.map((p,i) => ({...p, name: p.name.trim()||`Player ${i+1}`}));
     const lower = ps.players.map(p => p.name.toLowerCase());
     if (new Set(lower).size !== lower.length) { alert('Player names must be unique — points are tracked by name.'); return; }
@@ -2287,6 +2304,7 @@ function attach9ptGameEvents() {
 
   // Confirm hole — lock scores and compute points
   document.getElementById('pt-confirm-hole')?.addEventListener('click', () => {
+    if (!confirmGuard()) return;
     const hi = pg.currentHole;
     const hole = SJCC.holes[hi];
     const allScored = ps.players.every(p => pg.scores[p.name] && pg.scores[p.name][hi] != null);
@@ -2308,6 +2326,7 @@ function attach9ptGameEvents() {
 
   // Finish round
   document.getElementById('pt-finish-round')?.addEventListener('click', () => {
+    if (!confirmGuard()) return;
     const hi = pg.currentHole;
     const hole = SJCC.holes[hi];
     const allScored = ps.players.every(p => pg.scores[p.name] && pg.scores[p.name][hi] != null);
@@ -2763,6 +2782,7 @@ function attachSSSetupEvents() {
     btn.addEventListener('click', e => { ss.betMode=e.target.dataset.ssMode; render(); });
   });
   document.getElementById('ss-start')?.addEventListener('click', () => {
+    if (state.ssSaved && !confirm('Start a new round? Your saved Skins Only round will be discarded.')) return;
     ss.players = ss.players.map((p,i)=>({...p, name:p.name.trim()||'Player '+(i+1)}));
     const lower = ss.players.map(p => p.name.toLowerCase());
     if (new Set(lower).size !== lower.length) { alert('Player names must be unique — skins are tracked by name.'); return; }
@@ -2811,6 +2831,7 @@ function attachSSGameEvents() {
   });
 
   document.getElementById('ss-confirm-hole')?.addEventListener('click', () => {
+    if (!confirmGuard()) return;
     // Max, not increment — re-confirming an earlier hole must not inflate the count
     sg.confirmedHoles = Math.max(sg.confirmedHoles || 0, sg.currentHole + 1);
     if (sg.currentHole < 17) sg.currentHole++;
@@ -3101,6 +3122,7 @@ function attachJKSSetupEvents() {
   document.getElementById('jks-add-player')?.addEventListener('click', () => { jks.players.push({name:'',hcp:0}); render(); });
   document.getElementById('jks-hcp-pct')?.addEventListener('input', e => { jks.hcpPct = Math.max(0, Math.min(100, numOr(e.target.value, 100))); saveState(); });
   document.getElementById('jks-start')?.addEventListener('click', () => {
+    if (state.jksSaved && !confirm('Start a new round? Your saved scorecard round will be discarded.')) return;
     jks.players = jks.players.map((p,i) => ({...p, name: p.name.trim()||'Player '+(i+1)}));
     const lower = jks.players.map(p => p.name.toLowerCase());
     if (new Set(lower).size !== lower.length) { alert('Player names must be unique — scores are tracked by name.'); return; }
@@ -3149,6 +3171,7 @@ function attachJKSGameEvents() {
   });
 
   document.getElementById('jks-confirm-hole')?.addEventListener('click', () => {
+    if (!confirmGuard()) return;
     // Max, not increment — re-confirming an earlier hole must not inflate the count
     jg.confirmedHoles = Math.max(jg.confirmedHoles || 0, jg.currentHole + 1);
     if (jg.currentHole < 17) jg.currentHole++;

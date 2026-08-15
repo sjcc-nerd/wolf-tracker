@@ -200,6 +200,27 @@ test('transition overlay: a throwing render cannot leave the overlay stuck', () 
   assert.equal(app.run('_transitioning'), false);
 });
 
+test('REGRESSION: confirmGuard blocks a double-tap, allows the next real confirm', () => {
+  const app = makeApp();
+  app.run('_lastConfirmAt = 0');
+  assert.equal(app.run('confirmGuard()'), true, 'first confirm passes');
+  assert.equal(app.run('confirmGuard()'), false, 'immediate second tap blocked');
+  app.run('_lastConfirmAt = Date.now() - 700');
+  assert.equal(app.run('confirmGuard()'), true, 'after the window, confirms flow again');
+});
+
+test('REGRESSION: Wolf Previous Holes chips carry a minus sign on losses', () => {
+  const app = makeApp();
+  app.setState({
+    screen: 'wolf-game', players: [], scores: {},
+    wolf: { players: ['A', 'B'], defaultBet: 5 },
+    wolfGame: { tab: 'prev', players: ['A', 'B'], currentHole: 2, editingHole: null,
+                holes: [{ num: 1, bet: 5, statuses: { A: 'winner', B: 'loser' }, results: { A: 5, B: -5 } }],
+                holeInput: { bet: 5, statuses: { A: 'push', B: 'push' } } }
+  });
+  assert.ok(app.appHTML().includes('B: −$5'), 'loss chip shows −$5');
+});
+
 /* ---------------- mobile invariants (each one has bitten on a real phone) ---------------- */
 
 test('mobile invariants: meta tags, touch handling, safe areas, thumb targets', () => {
